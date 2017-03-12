@@ -1,15 +1,13 @@
 ---
-title: "Home"
+title: "Bayesian Shrinkage, Selection, and Sparsity"
 output:
   html_document:
     toc: false
 ---
 
-The goal of this new template is to simplify the setup and maintenance of a research website.
-Specifically,
+Working with [Matthew Stephens] and [Nicholas Polson], I'm exploring various ideas in shrinkage, selection, and sparsity, especially in Bayesian framework.
 
-*  Easier to build and extend the website using the new tools in the [rmarkdown][] package and [latest RStudio release][rstudio]
-*  Easier to deploy the website with Git and GitHub by only using one branch
+*  [Bernoulli-Gaussian spike-and-slab applied to normal means](bernoulli-gaussian.html)
 
-[rmarkdown]: http://rmarkdown.rstudio.com/rmarkdown_websites.htm
-[rstudio]: https://www.rstudio.com/products/rstudio/download/preview/
+[Matthew Stephens]: http://stephenslab.uchicago.edu/
+[Nicholas Polson]: http://faculty.chicagobooth.edu/nicholas.polson/

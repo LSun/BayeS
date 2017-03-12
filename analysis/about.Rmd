@@ -5,4 +5,4 @@ output:
     toc: false
 ---
 
-Describe your project.
+`BayeS` explores various ideas in Bayesian Shrinkage, Selection, Sparsity.
