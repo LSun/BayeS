@@ -310,7 +310,7 @@ div.tocify {
 
 
 <p><strong>Last updated:</strong> 2017-03-12</p>
-<p><strong>Code version:</strong> 8f8d2d4</p>
+<p><strong>Code version:</strong> 8c206a4</p>
 <div id="problem" class="section level2">
 <h2>Problem</h2>
 <p>In normal means problem, suppose</p>
@@ -602,12 +602,15 @@ legend(&quot;top&quot;, col = rainbow(length(nsigma))[1:(k - 1)], lty = 1,
 \]</span></p>
 <p>It’s easy to see that the penalty term corresponding to this rule should be a <span class="math inline">\(l_2\)</span>-<span class="math inline">\(l_0\)</span> regularization. In particular,</p>
 <p><span class="math display">\[
-\phi(u) = \frac{1}{2\sigma^2}u^2 + \frac{z^*(\sigma^2 + s^2)}{2\sigma^2s^2}\|u\|_0
-\]</span> where <span class="math inline">\(\|u\|_0 = I(u \neq 0)\)</span> is the indicator of <span class="math inline">\(u\)</span> being nonzero, <span class="math inline">\(z^*\)</span> defined as above. Written in another way</p>
+\phi(u) = \frac{1}{2\sigma^2}u^2 + \lambda\|u\|_0
+\]</span> where <span class="math inline">\(\|u\|_0 = I(u \neq 0)\)</span> is the indicator of <span class="math inline">\(u\)</span> being nonzero. A little algebra shows that</p>
+<p><span class="math display">\[
+\lambda = \frac{{z^*}^2\sigma^2}{2s^2(\sigma^2 + s^2)} = \log\left(\frac{\pi}{1-\pi}\sqrt{\frac{\sigma^2 + s^2}{s^2}}\right)
+\]</span> Written in another way</p>
 <p><span class="math display">\[
 \begin{array}{rl}
 &amp; \arg\min_u\{\frac1{2s^2}(z - u)^2 + \phi(u)\}\\
-= &amp; \arg\min_u\{\frac1{2s^2}(z - u)^2 + \frac{1}{2\sigma^2}u^2 + \frac{z^*(\sigma^2 + s^2)}{2\sigma^2s^2}\|u\|_0\}\\
+= &amp; \arg\min_u\{\frac1{2s^2}(z - u)^2 + \frac{1}{2\sigma^2}u^2 + \log\left(\frac{\pi}{1-\pi}\sqrt{\frac{\sigma^2 + s^2}{s^2}}\right)\|u\|_0\}\\
 = &amp;
 \begin{cases}
 0 &amp; |z| \leq z_{s, \pi, \sigma}^* \\
@@ -615,10 +618,12 @@ legend(&quot;top&quot;, col = rainbow(length(nsigma))[1:(k - 1)], lty = 1,
 \end{cases}
 \end{array}
 \]</span></p>
-<pre class="r"><code>zstar = function (s, pi, sigma) {zstar = sqrt(2 * (sigma^2 + s^2) * (s^2 / sigma^2) * log(pi / (1 - pi) * sqrt((sigma^2 + s^2) / s^2))); return(zstar)}
+<pre class="r"><code># zstar = function (s, pi, sigma) {zstar = sqrt(2 * (sigma^2 + s^2) * (s^2 / sigma^2) * log(pi / (1 - pi) * sqrt((sigma^2 + s^2) / s^2))); return(zstar)}
 s = 1
 pi = 0.9
-phi_s = function (u, s, pi, sigma) {phi_s = 1 / (2 * sigma^2) * u^2 + zstar(s, pi, sigma = 1) * (s^2 + sigma^2) / (2 * sigma^2 * s^2); return(phi_s)}
+# phi_s = function (u, s, pi, sigma) {phi_s = 1 / (2 * sigma^2) * u^2 + zstar(s, pi, sigma = 1) * (s^2 + sigma^2) / (2 * sigma^2 * s^2); return(phi_s)}
+
+phi_s = function (u, s, pi, sigma) {phi_s = 1 / (2 * sigma^2) * u^2 + log(pi / (1 - pi) * sqrt((sigma^2 + s^2) / s^2)); return(phi_s)}
 ymax = max(phi_s(u, s, pi, sigma = 1))
 plot(u, phi_s(u, s, pi, sigma = 1), type = &quot;n&quot;, ylim = c(0, ymax),
      xlab = expression(u), ylab = expression(phi(u)),
@@ -662,14 +667,16 @@ for (sigma in nsigma) {
   segments(0, 0, 0, phi_s(0, s, pi, sigma = sigma), lty = 3, col = rainbow(length(nsigma))[k])
   k = k + 1
 }
-legend(&quot;top&quot;, col = rainbow(length(nsigma))[1:(k - 1)], lty = 1,
-       legend = expression(
+legend(&quot;top&quot;,
+       col = c(rainbow(length(nsigma))[1:(k - 1)], 6),
+       lty = c(rep(1, length(nsigma)), 2),
+       legend = c(expression(
          sigma == 1,
          sigma == 2,
          sigma == 5,
          sigma == 10,
          sigma == 100
-       )
+       ), &quot;sparsity&quot;)
        )</code></pre>
 <p><img src="figure/bernoulli-gaussian.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
