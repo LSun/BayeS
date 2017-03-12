@@ -5,15 +5,8 @@ output:
     toc: false
 ---
 
-What license are you using for your code? See [choosealicense.com][choose] for
-help deciding. And don't forget to update the file `LICENSE` in the root of your
-Git repo.
+The code is available under the [MIT license]. The text and data are availabe under the [CC-BY license]. See the file [LICENSE] for full details.
 
-What license are you using for the written content on your site? It is
-traditional to choose a [Creative Commons][cc] license for this type of content.
-
-[choose]: http://choosealicense.com/
-[cc]: https://creativecommons.org/choose/
-
-How should others cite your work? Don't forget to update the file `CITATION` in
-the root of your Git repo.
+[MIT license]: https://opensource.org/licenses/MIT
+[CC-BY license]: https://creativecommons.org/licenses/by/4.0/legalcode
+[LICENSE]: https://github.com/LSun/truncash/blob/master/LICENSE

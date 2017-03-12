@@ -5,7 +5,7 @@ output:
     toc: false
 ---
 
-Working with [Matthew Stephens] and [Nicholas Polson], I'm exploring various ideas in shrinkage, selection, and sparsity, especially in Bayesian framework.
+Working with [Matthew Stephens] and [Nicholas Polson], I'm exploring various ideas in statistical shrinkage, selection, and sparsity, especially in Bayesian framework.
 
 *  [Bernoulli-Gaussian spike-and-slab applied to normal means](bernoulli-gaussian.html)
 
