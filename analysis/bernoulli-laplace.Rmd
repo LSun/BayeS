@@ -1,0 +1,471 @@
+---
+title: "Bernoulli-Laplace \\& Normal Means"
+author: "Lei Sun"
+date: 2017-03-12
+output: html_document
+---
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+<!-- Add your analysis here -->
+
+```{r functions, echo = FALSE}
+Flambda = function (z, s, lambda) {
+  Fz = exp(lambda * z) * pnorm(-z, lambda * s^2, s)
+  return(Fz)
+}
+
+postmean_l = function (z, s, lambda) {
+  Fplus = Flambda(z, s, lambda)
+  Fminus = Flambda(-z, s, lambda)
+  wplus = Fplus / (Fplus + Fminus)
+  wminus = 1 - wplus
+  pm = wplus * (z + lambda * s^2) + wminus * (z - lambda * s^2)
+  return(pm)
+}
+
+flambda = function (z, s, lambda) {
+  fz = lambda / 2 * exp(lambda^2 * s^2 / 2) * (Flambda(z, s, lambda) + Flambda(-z, s, lambda))
+  return(fz)
+}
+
+p_bl = function(z, s, pi, lambda) {
+  psp = pi * dnorm(z, 0, s)
+  psl = (1 - pi) * flambda(z, s, lambda)
+  p = psp / (psp + psl)
+}
+
+pm_bl = function (z, s, pi, lambda) {
+  (1 - p_bl(z, s, pi, lambda)) * postmean_l(z, s, lambda)
+}
+
+zhat_bl = function(u, s, pi, lambda) {
+  pm_bl_u = function(z) {
+    return(pm_bl(z, s, pi, lambda) - u)
+  }
+  uniroot(pm_bl_u, c(-50, 50))$root
+}
+
+phi_bl = function (u, s, pi, sd) {
+  lambda = sqrt(2) / sd
+  zhat = sapply(u, zhat_bl, s = 1, pi = 0.9, lambda = sqrt(2)/sd)
+  fzhat = pi * dnorm(zhat, 0, s) + (1 - pi) * flambda(zhat, s, lambda)
+  fz0 = pi * dnorm(0, 0, s) + (1 - pi) * flambda(0, s, lambda)
+  phi_sigma = -log(fzhat) - (zhat - u)^2 / (2 * s^2) + log(fz0)
+  return(phi_sigma)
+}
+
+zstar_bl = function (s, pi, sd, lambda = NULL) {
+  if(is.null(lambda)) {lambda = sqrt(2) / sd}
+  zstar = function (z) {
+    return(pi * dnorm(z, 0, s) - (1 - pi) * flambda(z, s, lambda))
+  }
+  uniroot(zstar, c(-1, 10))$root
+}
+
+muhat_bl_sp = function (z, s, pi, sd, lambda = NULL) {
+  if(is.null(lambda)) {lambda = sqrt(2) / sd}
+  zstar = zstar_bl
+}
+
+pm_bg = function(z, s, sigma, pi) {
+	p1 = pi * dnorm(z, 0, s)
+	p2 = (1 - pi) * dnorm(z, 0, sqrt(s^2 + sigma^2))
+	p1 = p1 / (p1 + p2)
+	p2 = 1 - p1
+	pm = z * sigma^2 / (sigma^2 + s^2) * p2
+	return(pm)
+}
+
+phi_bg = function (u, s, sigma, pi) {
+  zhat = c()
+  for (i in 1:length(u)) {
+    pmu = function(z) {
+      pmu = pm_bg(z, s, sigma, pi) - u[i]
+      return(pmu)
+    }
+    zhat[i] = uniroot(pmu, c(-25, 25))$root
+  }
+  fz = pi * dnorm(zhat, 0, s) + (1 - pi) * dnorm(zhat, 0, sqrt(s^2 + sigma^2))
+  fz0 = pi * dnorm(0, 0, s) + (1 - pi) * dnorm(0, 0, sqrt(s^2 + sigma^2))
+  phi_sigma = -log(fz) - (zhat - u)^2 / (2 * s^2) + log(fz0)
+  return(phi_sigma)
+}
+```
+
+
+## Problem
+
+Following Bernoulli-Gaussian, we now consider Bernoulli-Laplace normal means problem
+
+$$
+\begin{array}{l}
+z|\mu \sim N(\mu, s^2)\\
+ g(\mu) = \pi\delta_0 + (1 - \pi)\frac\lambda 2e^{-\lambda|\mu|}\\
+\end{array}
+$$
+whose prior is a special case of Spike-and-slab Laplace prior
+$$
+ g(\mu) = \pi\frac{\lambda_0}2e^{-\lambda_0|\mu|} + (1 - \pi)\frac\lambda 2e^{-\lambda|\mu|}
+$$
+as $\lambda_0\to\infty$.
+
+### General result for mixture priors
+
+Suppose
+
+$$
+\begin{array}{l}
+z|\mu \sim p_\mu \\
+\mu | \pi \sim \sum_k\pi_kg_k
+\end{array}
+\Rightarrow
+\begin{array}{rl}
+p(\mu|z, \pi) &= \frac{p(\mu, z | \pi)}{p(z|\pi)} = 
+\frac{p(z | \mu)p(\mu|\pi)}{p(z|\pi)}\\
+&=\frac{p_{\mu}(z) \sum_k\pi_kg_k(\mu)}{\int_\mu p_{\mu}(z) \sum_l\pi_lg_l(\mu)d\mu}
+=\frac{\sum_k\pi_kp_{\mu}(z) g_k(\mu)}{\sum_l\pi_l\int_\mu p_{\mu}(z) g_l(\mu)d\mu}\\
+&=\frac{\sum_k\pi_k\frac{p_{\mu}(z) g_k(\mu)}{\int_\mu p_{\mu}(z) g_k(\mu)d\mu}\int_\mu p_{\mu}(z) g_k(\mu)d\mu}{\sum_l\pi_l\int_\mu p_{\mu}(z) g_l(\mu)d\mu}
+=\frac{\sum_k\pi_k\int_\mu p_{\mu}(z) g_k(\mu)d\mu\frac{p_{\mu}(z) g_k(\mu)}{\int_\mu p_{\mu}(z) g_k(\mu)d\mu}}{\sum_l\pi_l\int_\mu p_{\mu}(z) g_l(\mu)d\mu}\\
+&=\frac{\sum_k\pi_k\int_\mu p_{\mu}(z) g_k(\mu)d\mu}{\sum_l\pi_l\int_\mu p_{\mu}(z) g_l(\mu)d\mu}p_k(\mu|z)
+=\frac{\sum_k\pi_kf_k(z)}{\sum_l\pi_lf_l(z)}p_k(\mu|z)\\
+&=\sum_k\frac{\pi_kf_k(z)}{\sum_l\pi_lf_l(z)}p_k(\mu|z)
+\end{array}
+$$
+where $f_j(z) := \int_\mu p_{\mu}(z) g_j(\mu)d\mu$ is the marginal density of $z$, also called the evidence of $z$, after integrating out $\mu$ for each prior component.  The posterior distribution is also a mixture. Each component is the posterior distribution with the same likelihood and each component of the prior, and the weight is based on the prior weight of each component and the marginal density or evidence for that component.
+
+### Normal means with Laplace priors
+
+As discussed above on mixture priors, the first step is to understand the problem when we have a normal likelihood and a Laplace (double exponential) prior centered on $0$
+
+$$
+\begin{array}{l}
+z|\mu \sim N(\mu, s^2)\\
+g_\lambda(\mu) = \frac\lambda 2e^{-\lambda|\mu|}
+\end{array}
+$$
+
+The result can be written out analytically but not as nice as in the normal likelihood and normal prior case.  First the marginal density
+
+$$
+f_\lambda(z) = [N(0, s^2) * g](z) = \int_{-\infty}^\infty\frac{1}{\sqrt{2\pi}s}e^{-\frac{(z - \mu)^2}{2s^2}}\frac\lambda 2e^{-\lambda|\mu|}d\mu
+=\frac\lambda2e^{\frac{\lambda^2s^2}{2}}(F_\lambda(z) + F_\lambda(-z))
+$$
+
+where
+
+$$
+F_\lambda(z) = e^{\lambda z}\Phi(-\frac1s(z + \lambda s^2))
+$$
+
+and $\Phi$ is the cumulative distribution function (cdf) of the standard normal $N(0, 1)$.  Note that
+
+$$
+\begin{array}{rrcl}
+& \frac{d}{dz}F_\lambda(z) & =&
+\lambda e^{\lambda z}\Phi(-\frac1s(z + \lambda s^2))
+-
+\lambda e^{-\frac{\lambda^2s^2}{2}}\frac{1}{\sqrt{2\pi}s}e^{-\frac{z^2}{2s^2}}\\
+& &=& \lambda F_\lambda(z) - \lambda e^{-\frac{\lambda^2s^2}{2}}N(z;0, s)\\
+\Rightarrow &
+\frac{d}{dz}F_\lambda(-z) & = &
+-(\lambda F_\lambda(-z) - \lambda e^{-\frac{\lambda^2s^2}{2}}N(-z;0, s))\\
+& & = &
+-\lambda F_\lambda(-z) + \lambda e^{-\frac{\lambda^2s^2}{2}}N(z;0, s))
+\end{array}
+$$
+
+Therefore,
+
+$$
+\frac{d}{dz}f_\lambda(z) = \frac\lambda2e^{\frac{\lambda^2s^2}{2}}(\frac{d}{dz}F_\lambda(z) + \frac{d}{dz}F_\lambda(-z))
+=\frac{\lambda^2}2e^{\frac{\lambda^2s^2}{2}}(F_\lambda(z) - F_\lambda(-z))
+$$
+
+By Tweedie's formula, under Laplace normal means model,
+
+$$
+\begin{array}{l}
+z|\mu \sim N(\mu, s^2)\\
+g_\lambda(\mu) = \frac\lambda 2e^{-\lambda|\mu|}
+\end{array}
+\Rightarrow
+\begin{array}{rcl}
+E[\mu|z] &=& z + s^2\frac{d}{dz}\log f_\lambda(z) \\
+&=& z + s^2\frac{\frac{d}{dz}f_\lambda(z)}{f_\lambda(z)}\\
+&=&z + s^2\frac{\frac{\lambda^2}2e^{\frac{\lambda^2s^2}{2}}(F_\lambda(z) - F_\lambda(-z))}{\frac\lambda2e^{\frac{\lambda^2s^2}{2}}(F_\lambda(z) + F_\lambda(-z))}\\
+&=& z+ \lambda s^2 \frac{F_\lambda(z) - F_\lambda(-z)}{F_\lambda(z) + F_\lambda(-z)}\\
+&=&\frac{F_\lambda(z)}{F_\lambda(z) + F_\lambda(-z)}(z + \lambda s^2)
++\frac{F_\lambda(-z)}{F_\lambda(z) + F_\lambda(-z)}(z - \lambda s^2)
+\end{array}
+$$
+
+Thus the posterior mean of a normal likelihood and a Laplace prior for the normal mean can be seen as a weighted average of $z \pm \lambda s^2$, with weights denoted
+
+$$
+\begin{array}{c}
+w_\lambda^+(z) = \frac{F_\lambda(z)}{F_\lambda(z) + F_\lambda(-z)}\\
+w_\lambda^-(z) = \frac{F_\lambda(-z)}{F_\lambda(z) + F_\lambda(-z)}
+\end{array}
+$$
+
+The posterior mean plotted as below.
+
+```{r, cache = TRUE, echo = FALSE}
+s = 0.1
+lambda = 20
+z = seq(-1, 1, 0.001)
+pm_z = postmean_l(z, s, lambda)
+plot(z, pm_z, type = "l", xlim = c(-1, 1), ylim = c(-1, 1), xlab = "Observation", ylab = "Posterior mean", main = bquote(paste(E(mu/z), " with Laplace prior, ", s == .(s),", ", lambda == .(lambda))))
+abline(0, 1, col = "blue", lty = 3)
+```
+
+It shows that the posterior mean of Bayesian lasso, which uses a normal likelihood and Laplace priors, has a flavor of soft thresholding, but not quite the same.  It comes from the fact that
+
+$$
+\begin{array}{rcl}
+E[\mu | z] 
+& = &
+w_\lambda^+(z)(z + \lambda s^2) + w_\lambda^-(z)(z - \lambda s^2)
+\\
+& = &
+z - (w_\lambda^-(z) - w_\lambda^+(z))\lambda s^2
+\end{array}
+$$
+in which $z \pm \lambda s^2$ are essentially the soft thresholding part, and $F_\lambda(z)$ decreases w.r.t. $z$, small when $z$ is positive and vice versa. Or in other words, $(w_\lambda^-(z) - w_\lambda^+(z))\lambda s^2$ is the penalty on the observation $z$.
+
+```{r cache = TRUE, echo = FALSE}
+s = 0.1
+lambda = 20
+z = seq(-1, 1, 0.001)
+plot(z, Flambda(z, s, lambda), type = "l", xlab = "z", ylab = expression(F[lambda]), col = "blue")
+lines(z, Flambda(-z, s, lambda), col = "green")
+legend("topright", lty = 1, col = c("blue", "green"), expression(F[lambda](z), F[lambda](-z)))
+wplus = Flambda(z, s, lambda) / (Flambda(-z, s, lambda) + Flambda(z, s, lambda))
+wminus = Flambda(-z, s, lambda) / (Flambda(-z, s, lambda) + Flambda(z, s, lambda))
+plot(z, wplus, type = "l", ylim = c(-1, 1), col = "blue", xlab = "observation z", ylab = "")
+lines(z, wminus, col = "green")
+lines(z, (wminus - wplus) * lambda * s^2, col = "red")
+lines(z, pm_z)
+abline(0, 1, lty = 2, col = "yellow")
+legend("bottomright", lty = 1, col = c("blue", "green", "red", "black"), c(expression(w[lambda]^"+", w[lambda]^"-", "penalty", E[mu/z])))
+```
+
+Now we are equipped to investigate Bernoulli-Laplace normal means.
+
+## Bernoulli-Laplace normal means
+
+The model is
+
+$$
+\begin{array}{l}
+z|\mu \sim N(\mu, s^2)\\
+ g(\mu) = \pi\delta_0 + (1 - \pi)\frac\lambda 2e^{-\lambda|\mu|}\\
+\end{array}
+\Rightarrow
+\begin{array}{l}
+z\sim \pi f_\delta + (1 - \pi)f_\lambda\\
+\mu | z \sim p\delta_0 + (1 - p)\mu_\lambda |z
+\end{array}
+$$
+where $f_\delta = N(0, s^2) * \delta_0 = N(0, s^2)$, the probability density function (pdf) of $N(0, s^2)$ and $\mu_\lambda | z$ denotes the posterior distribution when $\mu$ has a Laplace prior with parameter $\lambda$, and as discussed in the general mixture priors case,
+
+$$
+p = \frac{\pi N(z; 0, s^2)}{\pi N(z; 0, s^2) + (1 - \pi)f_\lambda(z)}
+$$
+where $N(z; 0, s^2)$ is the probability density of $z$ under $N(0, s^2)$, computed directly in `R` using `dnorm(z, 0, s)`.
+
+### Posterior mean
+
+The posterior mean is the optimal Bayesian estimator $\hat\mu_B$ w.r.t. the quadratic loss.  Under Bernoulli-Laplace prior, this posterior mean
+
+$$
+E[\mu | z] = (1 - p)E[\mu_\lambda | z]
+$$
+
+
+```{r cache = TRUE, echo = FALSE}
+pi = 0.9
+s = 1
+z = seq(-6, 6, 0.01)
+sd = c(0.5, 1, 2, 5, 10, 100)
+lambda = sqrt(2) / sd
+col = rainbow(length(sd))
+plot(z, z, type = "n", ylim = range(z), xlab = "Observation", ylab = "Posterior Mean", main = bquote(paste(E(mu/z), " with Bernoulli-Laplace prior, ", s == .(s), ", ", pi == .(pi))))
+for (i in 1:length(lambda)) {
+  lines(z, pm_bl(z, s, pi, lambda = lambda[i]), col = col[i])
+}
+abline(0, 1, lty = 3)
+abline(h = 0, lty = 3)
+legend("topleft", lty = 1, col = col[1:length(lambda)], legend = paste("sd =", sd), ncol = 2)
+```
+The posterior mean has flavors of both hard- and soft-thresholding.
+
+### Penalty $\phi_\text{BL}^\text{PM}$ associated with posterior mean
+
+Using the framework detailed in the [Bernoulli-Gaussian case](bernoulli-gaussian.html), we can find $\phi$ such that
+
+$$
+E[\mu |z] = (1 - p)E[\mu_\lambda | z] =\arg\min_u\frac1{2s^2}(z - u)^2 + \phi(u)
+$$
+
+in the following steps
+
+1. For each $u$, find $\hat z$ such that $u = (1 - p)E[\mu_\lambda | \hat z]$.
+
+2. $\phi(u) = - \log f(\hat z) - \frac{1}{2s^2}(\hat z - u)^2 + \log f(0)$
+
+Here $\phi_\text{BL}^\text{PM}$ indicates this penalty $\phi$ is associated with the posterior mean ("PM") of the Bernoulli-Laplace ("BL") normal means model.
+
+```{r, cache = TRUE, echo = FALSE}
+pi = 0.9
+s = 1
+u = seq(-10, 10, 0.01)
+sd = c(1, 2, 5, 10, 100)
+ymax = phi_bl(max(u), s, pi, sd = min(sd))
+col = rainbow(length(sd))
+plot(u, u, type = "n", ylim = c(0, ymax), xlab = "u", ylab = expression(phi[BL]^PM * (u)), main = bquote(paste(phi[BL]^PM, " for posterior mean of Bernoulli-Laplace ", ", ", s == .(s), ", ", pi == .(pi))))
+for (i in 1:length(sd)) {
+  lines(u, phi_bl(u, s, pi, sd = sd[i]), col = col[i])
+}
+legend("top", lty = 1, col = col[1:length(sd)], legend = paste("sd =", sd))
+```
+
+The penalty does have some similarity with Lasso around $0$.
+
+### Penalty $\phi_\text{BL}^\text{SP}$ associated with inducing sparsity
+
+As in [the Bernoulli-Gaussian case](bernoulli-gaussian.html), under Bernoulli-Laplace, $E[\mu |z]$ is shrunk towards $0$ but never strictly $0$ unless $z = 0$.  In order to impose sparsity, in practice, researchers usually set $\hat\mu_B = 0$ if $p \geq 0.5$, or in other words,
+
+$$
+\frac{f_\delta(z)}{f_\lambda(z)} = \frac{N(z; 0, s^2)}{f_\lambda(z)} \geq \frac{1 - \pi}{\pi}
+$$
+Since $f_\lambda(z)$ is a convolution of $N(z; 0, s^2)$ and a Laplace centered at 0, it should be a "watered-down" version of $N(z; 0, s^2)$.  **Therefore, $\frac{N(z; 0, s^2)}{f_\lambda(z)}$ should be symmetric at 0 and decreasing in $|z|$, i.e., they have stochastic orders. (?)**  It implies that $p \geq 0.5 \Leftrightarrow |z| \leq z_{s, \pi, \lambda}^*$
+
+```{r cahce = TRUE, echo = FALSE}
+z = seq(-5, 5, 0.01)
+s = 1
+lambda = 1
+zstar = zstar_bl(s, pi = 0.9, lambda = lambda)
+plot(z, dnorm(z, 0, s), type = "l", ylab = "Probability Density", main = bquote(paste(
+  f[delta], " vs ", f[lambda], ", "
+  , s == .(s), ", ", lambda == .(lambda))))
+lines(z, flambda(z, s, lambda), col = "blue")
+segments(zstar, -1, zstar, max(dnorm(zstar, 0, s), flambda(zstar, s, lambda)), lty = 3, col = "red")
+text(zstar, 0, labels = expression(z^"*"), pos = 2, col = "green")
+legend("topright", lty = 1, col = c("black", "blue"), c(expression(f[delta], f[lambda])))
+
+plot(z, dnorm(z, 0, s) / flambda(z, s, lambda), ylab = "Likelihood Ratio", type = "l", 
+     main = bquote(paste(f[delta] / f[lambda], ", ", pi == .(pi)))
+     )
+abline(h = (1 - pi) / pi, lty = 2, col = "red")
+segments(zstar, -1, zstar, dnorm(zstar, 0, s) / flambda(zstar, s, lambda), lty = 3, col = "red")
+text(zstar, 0, labels = expression(z^"*"), pos = 2, col = "green")
+legend("topright", lty = c(1, 2), col = c(1, "red"), legend = expression(f[delta] / f[lambda], pi / (1 - pi)))
+```
+
+Meanwhile, if $p < 0.5 \Leftrightarrow \frac{N(z; 0, s^2)}{f_\lambda(z)} < \frac{1 - \pi}{\pi}\Leftrightarrow |z| > z_{s, \pi, \lambda}^*$, we'll set $\hat\mu_B$ as the conditional mean conditioned on the assumption that $\mu \neq 0$.  That is,
+
+$$
+\hat\mu_{BL}^{SP} = \begin{cases}
+0 & |z| \leq z_{s, \pi, \lambda}^*\\
+E[\mu_\lambda | z] & \text{otherwise}
+\end{cases}
+$$
+
+```{r, cache = TRUE, echo = FALSE}
+s = 1
+pi = 0.9
+z = 6
+sd = c(0.5, 1, 2, 5, 10, 100)
+lambda = sqrt(2) / sd
+plot(z, z, type = "n", xlim = c(-z, z), ylim = c(-z, z), xlab = "Observation", ylab = expression(hat(mu)[BL]^SP), main = bquote(paste(
+ hat(mu)[BL]^SP, ", Bernoulli-Laplace prior with sparsity, ", s == .(s), ", ", pi == .(pi)
+)
+))
+col = rainbow(length(sd))
+for (i in 1:length(sd)) {
+  zstar = zstar_bl(s, pi, sd[i])
+  segments(-zstar, 0, zstar, 0, col = col[i])
+  zpt = seq(zstar, z, 0.001)
+  muhatpt = postmean_l(zpt, s, lambda[i])
+  lines(zpt, muhatpt, col = col[i])
+  lines(-zpt, -muhatpt, col = col[i])
+  segments(zstar, 0, zstar, postmean_l(zstar, s, lambda[i]), lty = 3, col = col[i])
+  segments(-zstar, 0, -zstar, -postmean_l(zstar, s, lambda[i]), lty = 3, col = col[i])
+}
+abline(0, 1, lty = 3)
+abline(h = 0, lty = 3)
+legend("topleft", lty = 1, col = col, legend = paste("sd =", sd), ncol = 2)
+```
+For a smaller standard deviation (large $\lambda$) in the slab component, $\hat\mu_{BL}^{SP}$ behaves like a hard-thresholding followed by a soft-thresholding, although not exactly.  Usually this behavior results from a $l_1$-$l_0$ mixed regularization.  As the standard deviation $\to\infty$, $\lambda\to0$, $\hat\mu_{BL}^{SP}$ converges to hard-thresholding.
+
+
+## Bernoulli-Gaussian vs Bernoulli-Laplace
+
+### Posterior mean
+
+```{r, cache = TRUE, echo = FALSE}
+pi = 0.9
+s = 1
+z = seq(-6, 6, 0.01)
+sd = c(0.5, 1, 2, 5, 10, 100)
+lambda = sqrt(2) / sd
+col = rainbow(length(sd))
+plot(z, z, type = "n", ylim = range(z), xlab = "Observation", ylab = "Posterior Mean", main = bquote(paste(E(mu/z), ", Bernoulli-Gaussian vs Bernoulli-Laplace, ", s == .(s), ", ", pi == .(pi))))
+for (i in 1:length(sd)) {
+  lines(z, pm_bl(z, s, pi, lambda = lambda[i]), col = col[i], lty = 2)
+  lines(z, pm_bg(z, s, sd[i], pi), col = col[i], lty = 1)
+}
+abline(0, 1, lty = 3)
+abline(h = 0, lty = 3)
+legend("topleft", lty = rep(1, length(sd)), col = col, legend = paste("sd =", sd), ncol = 2)
+legend("bottomright", lty = c(1, 2), c("Bernoulli-Gaussian", "Bernoulli-Laplace"), col = sample(colours(), 1))
+```
+
+For the same standard deviation for the slab component, Bernoulli-Laplace penalizes large observations much more slightly than Bernoulli-Gaussian, essentially showing the difference between $l_1$ and $l_2$.
+
+### Penalty term $\phi^PM$ corresponding to the posterior mean
+
+```{r, cache = TRUE, echo = FALSE}
+pi = 0.9
+s = 1
+u = seq(-6, 6, 0.01)
+sd = c(1, 2, 5, 10, 100)
+lambda = sqrt(2) / sd
+col = rainbow(length(sd))
+ymax = phi_bl(max(u), s, pi, sd = min(sd))
+plot(u, u, type = "n", ylim = c(0, ymax), xlab = "u", ylab = expression(phi^PM*(u)), main = bquote(paste(phi^PM, ", Bernoulli-Gaussian vs Bernoulli-Laplace, ", s == .(s), ", ", pi == .(pi))))
+for (i in 1:length(sd)) {
+  lines(u, phi_bl(u, s, pi, sd = sd[i]), col = col[i], lty = 2)
+  lines(u, phi_bg(u, s, sd[i], pi), col = col[i], lty = 1)
+}
+legend("top", lty = 1, col = col[1:length(sd)], legend = paste("sd =", sd))
+colb = sample(colours(), 1)
+legend("bottomleft", lty = 1, col = colb, "Bernoulli-Gaussian")
+legend("bottomright", lty = 2, col = colb, "Bernoulli-Laplace")
+```
+As expected, Bernoulli-Gaussian is closer to the ridge regression penalty, whereas Bernoulli-Laplace the Lasso one.
+
+## Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```

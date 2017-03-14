@@ -310,7 +310,7 @@ div.tocify {
 
 
 <p><strong>Last updated:</strong> 2017-03-12</p>
-<p><strong>Code version:</strong> 8c206a4</p>
+<p><strong>Code version:</strong> 9db270b</p>
 <div id="problem" class="section level2">
 <h2>Problem</h2>
 <p>In normal means problem, suppose</p>
@@ -321,17 +321,17 @@ z|\mu \sim N(\mu, s^2)\\
 \end{array}
 \]</span></p>
 <p>Under Bayesian framework, we get an estimator <span class="math inline">\(\hat\mu_B\)</span> from the posterior distribution <span class="math inline">\(\mu | z\)</span>, optimal to a pre-specified loss function.</p>
-<p>In particular, the best estimator in terms of quadratic loss is <span class="math inline">\(E[\mu | z]\)</span>, the posterior mean. By Tweedie’s formula</p>
+<p><strong>The problem is whether we can find a <span class="math inline">\(\phi\)</span>, such that <span class="math inline">\(\hat\mu_B\)</span>, the optimal Bayesian estimator to a certain loss, is a solution to the regularized least squares with <span class="math inline">\(\phi\)</span> as the penalty.</strong></p>
 <p><span class="math display">\[
-E[\mu | z] = z + s^2\nabla\log f(z)
-\]</span> where <span class="math inline">\(f\)</span> is the marginal probability density of <span class="math inline">\(z\)</span>, after integrating out <span class="math inline">\(\mu\)</span>. <span class="math inline">\(f\)</span> is usually a convolution of prior and likelihood. In the normal means setting, <span class="math inline">\(f = N(0, s^2) * g\)</span>.</p>
-<p><strong>The problem is whether we can find a <span class="math inline">\(\phi\)</span>, such that the optimal Bayesian estimator <span class="math inline">\(\hat\mu_B\)</span> is a solution to the regularized least squares with <span class="math inline">\(\phi\)</span> as the penalty.</strong></p>
-<p><span class="math display">\[
-\hat\mu_B = \arg\min_u\{\frac1{2s^2}(z - u)^2 + \phi(u)\} = \text{prox}_{s^2\phi}(z)
+\hat\mu_B = \arg\min_u\{\frac1{2s^2}(z - u)^2 + \phi(u)\} := \text{prox}_{s^2\phi}(z)
 \]</span></p>
 <div id="posterior-mean-and-regularized-least-squares" class="section level3">
 <h3>Posterior mean and regularized least squares</h3>
-<p>If we let <span class="math inline">\(\hat\mu_B\)</span> be the posterior mean <span class="math inline">\(E[\mu | z]\)</span>, we are essentially matching Tweedie’s formula with a proximal operator, such that</p>
+<p>In particular, the best estimator in terms of the quadratic loss is <span class="math inline">\(E[\mu | z]\)</span>, the posterior mean. By Tweedie’s formula</p>
+<p><span class="math display">\[
+E[\mu | z] = z + s^2\nabla\log f(z)
+\]</span> where <span class="math inline">\(f\)</span> is the marginal probability density of <span class="math inline">\(z\)</span>, after integrating out <span class="math inline">\(\mu\)</span>. <span class="math inline">\(f\)</span> is usually a convolution of prior and likelihood. In the normal means setting, <span class="math inline">\(f = N(0, s^2) * g\)</span>.</p>
+<p>If we let <span class="math inline">\(\hat\mu_B\)</span> be the posterior mean <span class="math inline">\(E[\mu | z]\)</span>, we are essentially matching Tweedie’s formula to a proximal operator, such that</p>
 <p><span class="math display">\[
 z + s^2\nabla\log f(z) = \text{prox}_{s^2\phi}(z)
 \]</span> For clarity let <span class="math inline">\(u := \text{prox}_{s^2\phi}(z)\)</span>. Now we are using two key properties of a proximal operator.</p>
@@ -401,6 +401,7 @@ z = \text{prox}_{s^2\log f}(u)
 <p><span class="math display">\[
 E[\mu|z] = \arg\min_u \frac{1}{2s^2}(z - u)^2 + \phi(u)
 \]</span></p>
+<p><strong>This framework of matching Tweedie’s formula to a proximal operator can potentially be generalized to the exponential family likelihood, not just normal means. The specific formula should be changed accordingly.</strong></p>
 </div>
 </div>
 <div id="bernoulli-gaussian-spike-and-slab" class="section level2">

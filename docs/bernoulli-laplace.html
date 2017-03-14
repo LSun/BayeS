@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Lei Sun" />
+
+<meta name="date" content="2017-03-12" />
+
+<title>Bernoulli-Laplace &amp; Normal Means</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">BayeS</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/LSun/BayeS">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Bernoulli-Laplace &amp; Normal Means</h1>
+<h4 class="author"><em>Lei Sun</em></h4>
+<h4 class="date"><em>2017-03-12</em></h4>
+
+</div>
+
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+<!-- Update knitr chunk options -->
+<!-- Insert the date the file was last updated -->
+<p><strong>Last updated:</strong> 2017-03-13</p>
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+<p><strong>Code version:</strong> 9db270b</p>
+<!-- Add your analysis here -->
+<div id="problem" class="section level2">
+<h2>Problem</h2>
+<p>Following Bernoulli-Gaussian, we now consider Bernoulli-Laplace normal means problem</p>
+<p><span class="math display">\[
+\begin{array}{l}
+z|\mu \sim N(\mu, s^2)\\
+ g(\mu) = \pi\delta_0 + (1 - \pi)\frac\lambda 2e^{-\lambda|\mu|}\\
+\end{array}
+\]</span> whose prior is a special case of Spike-and-slab Laplace prior <span class="math display">\[
+ g(\mu) = \pi\frac{\lambda_0}2e^{-\lambda_0|\mu|} + (1 - \pi)\frac\lambda 2e^{-\lambda|\mu|}
+\]</span> as <span class="math inline">\(\lambda_0\to\infty\)</span>.</p>
+<div id="general-result-for-mixture-priors" class="section level3">
+<h3>General result for mixture priors</h3>
+<p>Suppose</p>
+<p><span class="math display">\[
+\begin{array}{l}
+z|\mu \sim p_\mu \\
+\mu | \pi \sim \sum_k\pi_kg_k
+\end{array}
+\Rightarrow
+\begin{array}{rl}
+p(\mu|z, \pi) &amp;= \frac{p(\mu, z | \pi)}{p(z|\pi)} = 
+\frac{p(z | \mu)p(\mu|\pi)}{p(z|\pi)}\\
+&amp;=\frac{p_{\mu}(z) \sum_k\pi_kg_k(\mu)}{\int_\mu p_{\mu}(z) \sum_l\pi_lg_l(\mu)d\mu}
+=\frac{\sum_k\pi_kp_{\mu}(z) g_k(\mu)}{\sum_l\pi_l\int_\mu p_{\mu}(z) g_l(\mu)d\mu}\\
+&amp;=\frac{\sum_k\pi_k\frac{p_{\mu}(z) g_k(\mu)}{\int_\mu p_{\mu}(z) g_k(\mu)d\mu}\int_\mu p_{\mu}(z) g_k(\mu)d\mu}{\sum_l\pi_l\int_\mu p_{\mu}(z) g_l(\mu)d\mu}
+=\frac{\sum_k\pi_k\int_\mu p_{\mu}(z) g_k(\mu)d\mu\frac{p_{\mu}(z) g_k(\mu)}{\int_\mu p_{\mu}(z) g_k(\mu)d\mu}}{\sum_l\pi_l\int_\mu p_{\mu}(z) g_l(\mu)d\mu}\\
+&amp;=\frac{\sum_k\pi_k\int_\mu p_{\mu}(z) g_k(\mu)d\mu}{\sum_l\pi_l\int_\mu p_{\mu}(z) g_l(\mu)d\mu}p_k(\mu|z)
+=\frac{\sum_k\pi_kf_k(z)}{\sum_l\pi_lf_l(z)}p_k(\mu|z)\\
+&amp;=\sum_k\frac{\pi_kf_k(z)}{\sum_l\pi_lf_l(z)}p_k(\mu|z)
+\end{array}
+\]</span> where <span class="math inline">\(f_j(z) := \int_\mu p_{\mu}(z) g_j(\mu)d\mu\)</span> is the marginal density of <span class="math inline">\(z\)</span>, also called the evidence of <span class="math inline">\(z\)</span>, after integrating out <span class="math inline">\(\mu\)</span> for each prior component. The posterior distribution is also a mixture. Each component is the posterior distribution with the same likelihood and each component of the prior, and the weight is based on the prior weight of each component and the marginal density or evidence for that component.</p>
+</div>
+<div id="normal-means-with-laplace-priors" class="section level3">
+<h3>Normal means with Laplace priors</h3>
+<p>As discussed above on mixture priors, the first step is to understand the problem when we have a normal likelihood and a Laplace (double exponential) prior centered on <span class="math inline">\(0\)</span></p>
+<p><span class="math display">\[
+\begin{array}{l}
+z|\mu \sim N(\mu, s^2)\\
+g_\lambda(\mu) = \frac\lambda 2e^{-\lambda|\mu|}
+\end{array}
+\]</span></p>
+<p>The result can be written out analytically but not as nice as in the normal likelihood and normal prior case. First the marginal density</p>
+<p><span class="math display">\[
+f_\lambda(z) = [N(0, s^2) * g](z) = \int_{-\infty}^\infty\frac{1}{\sqrt{2\pi}s}e^{-\frac{(z - \mu)^2}{2s^2}}\frac\lambda 2e^{-\lambda|\mu|}d\mu
+=\frac\lambda2e^{\frac{\lambda^2s^2}{2}}(F_\lambda(z) + F_\lambda(-z))
+\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+F_\lambda(z) = e^{\lambda z}\Phi(-\frac1s(z + \lambda s^2))
+\]</span></p>
+<p>and <span class="math inline">\(\Phi\)</span> is the cumulative distribution function (cdf) of the standard normal <span class="math inline">\(N(0, 1)\)</span>. Note that</p>
+<p><span class="math display">\[
+\begin{array}{rrcl}
+&amp; \frac{d}{dz}F_\lambda(z) &amp; =&amp;
+\lambda e^{\lambda z}\Phi(-\frac1s(z + \lambda s^2))
+-
+\lambda e^{-\frac{\lambda^2s^2}{2}}\frac{1}{\sqrt{2\pi}s}e^{-\frac{z^2}{2s^2}}\\
+&amp; &amp;=&amp; \lambda F_\lambda(z) - \lambda e^{-\frac{\lambda^2s^2}{2}}N(z;0, s)\\
+\Rightarrow &amp;
+\frac{d}{dz}F_\lambda(-z) &amp; = &amp;
+-(\lambda F_\lambda(-z) - \lambda e^{-\frac{\lambda^2s^2}{2}}N(-z;0, s))\\
+&amp; &amp; = &amp;
+-\lambda F_\lambda(-z) + \lambda e^{-\frac{\lambda^2s^2}{2}}N(z;0, s))
+\end{array}
+\]</span></p>
+<p>Therefore,</p>
+<p><span class="math display">\[
+\frac{d}{dz}f_\lambda(z) = \frac\lambda2e^{\frac{\lambda^2s^2}{2}}(\frac{d}{dz}F_\lambda(z) + \frac{d}{dz}F_\lambda(-z))
+=\frac{\lambda^2}2e^{\frac{\lambda^2s^2}{2}}(F_\lambda(z) - F_\lambda(-z))
+\]</span></p>
+<p>By Tweedie’s formula, under Laplace normal means model,</p>
+<p><span class="math display">\[
+\begin{array}{l}
+z|\mu \sim N(\mu, s^2)\\
+g_\lambda(\mu) = \frac\lambda 2e^{-\lambda|\mu|}
+\end{array}
+\Rightarrow
+\begin{array}{rcl}
+E[\mu|z] &amp;=&amp; z + s^2\frac{d}{dz}\log f_\lambda(z) \\
+&amp;=&amp; z + s^2\frac{\frac{d}{dz}f_\lambda(z)}{f_\lambda(z)}\\
+&amp;=&amp;z + s^2\frac{\frac{\lambda^2}2e^{\frac{\lambda^2s^2}{2}}(F_\lambda(z) - F_\lambda(-z))}{\frac\lambda2e^{\frac{\lambda^2s^2}{2}}(F_\lambda(z) + F_\lambda(-z))}\\
+&amp;=&amp; z+ \lambda s^2 \frac{F_\lambda(z) - F_\lambda(-z)}{F_\lambda(z) + F_\lambda(-z)}\\
+&amp;=&amp;\frac{F_\lambda(z)}{F_\lambda(z) + F_\lambda(-z)}(z + \lambda s^2)
++\frac{F_\lambda(-z)}{F_\lambda(z) + F_\lambda(-z)}(z - \lambda s^2)
+\end{array}
+\]</span></p>
+<p>Thus the posterior mean of a normal likelihood and a Laplace prior for the normal mean can be seen as a weighted average of <span class="math inline">\(z \pm \lambda s^2\)</span>, with weights denoted</p>
+<p><span class="math display">\[
+\begin{array}{c}
+w_\lambda^+(z) = \frac{F_\lambda(z)}{F_\lambda(z) + F_\lambda(-z)}\\
+w_\lambda^-(z) = \frac{F_\lambda(-z)}{F_\lambda(z) + F_\lambda(-z)}
+\end{array}
+\]</span></p>
+<p>The posterior mean plotted as below.</p>
+<p><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-1-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>It shows that the posterior mean of Bayesian lasso, which uses a normal likelihood and Laplace priors, has a flavor of soft thresholding, but not quite the same. It comes from the fact that</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+E[\mu | z] 
+&amp; = &amp;
+w_\lambda^+(z)(z + \lambda s^2) + w_\lambda^-(z)(z - \lambda s^2)
+\\
+&amp; = &amp;
+z - (w_\lambda^-(z) - w_\lambda^+(z))\lambda s^2
+\end{array}
+\]</span> in which <span class="math inline">\(z \pm \lambda s^2\)</span> are essentially the soft thresholding part, and <span class="math inline">\(F_\lambda(z)\)</span> decreases w.r.t. <span class="math inline">\(z\)</span>, small when <span class="math inline">\(z\)</span> is positive and vice versa. Or in other words, <span class="math inline">\((w_\lambda^-(z) - w_\lambda^+(z))\lambda s^2\)</span> is the penalty on the observation <span class="math inline">\(z\)</span>.</p>
+<p><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-2-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Now we are equipped to investigate Bernoulli-Laplace normal means.</p>
+</div>
+</div>
+<div id="bernoulli-laplace-normal-means" class="section level2">
+<h2>Bernoulli-Laplace normal means</h2>
+<p>The model is</p>
+<p><span class="math display">\[
+\begin{array}{l}
+z|\mu \sim N(\mu, s^2)\\
+ g(\mu) = \pi\delta_0 + (1 - \pi)\frac\lambda 2e^{-\lambda|\mu|}\\
+\end{array}
+\Rightarrow
+\begin{array}{l}
+z\sim \pi f_\delta + (1 - \pi)f_\lambda\\
+\mu | z \sim p\delta_0 + (1 - p)\mu_\lambda |z
+\end{array}
+\]</span> where <span class="math inline">\(f_\delta = N(0, s^2) * \delta_0 = N(0, s^2)\)</span>, the probability density function (pdf) of <span class="math inline">\(N(0, s^2)\)</span> and <span class="math inline">\(\mu_\lambda | z\)</span> denotes the posterior distribution when <span class="math inline">\(\mu\)</span> has a Laplace prior with parameter <span class="math inline">\(\lambda\)</span>, and as discussed in the general mixture priors case,</p>
+<p><span class="math display">\[
+p = \frac{\pi N(z; 0, s^2)}{\pi N(z; 0, s^2) + (1 - \pi)f_\lambda(z)}
+\]</span> where <span class="math inline">\(N(z; 0, s^2)\)</span> is the probability density of <span class="math inline">\(z\)</span> under <span class="math inline">\(N(0, s^2)\)</span>, computed directly in <code>R</code> using <code>dnorm(z, 0, s)</code>.</p>
+<div id="posterior-mean" class="section level3">
+<h3>Posterior mean</h3>
+<p>The posterior mean is the optimal Bayesian estimator <span class="math inline">\(\hat\mu_B\)</span> w.r.t. the quadratic loss. Under Bernoulli-Laplace prior, this posterior mean</p>
+<p><span class="math display">\[
+E[\mu | z] = (1 - p)E[\mu_\lambda | z]
+\]</span></p>
+<p><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /> The posterior mean has flavors of both hard- and soft-thresholding.</p>
+</div>
+<div id="penalty-phi_textbltextpm-associated-with-posterior-mean" class="section level3">
+<h3>Penalty <span class="math inline">\(\phi_\text{BL}^\text{PM}\)</span> associated with posterior mean</h3>
+<p>Using the framework detailed in the <a href="bernoulli-gaussian.html">Bernoulli-Gaussian case</a>, we can find <span class="math inline">\(\phi\)</span> such that</p>
+<p><span class="math display">\[
+E[\mu |z] = (1 - p)E[\mu_\lambda | z] =\arg\min_u\frac1{2s^2}(z - u)^2 + \phi(u)
+\]</span></p>
+<p>in the following steps</p>
+<ol style="list-style-type: decimal">
+<li><p>For each <span class="math inline">\(u\)</span>, find <span class="math inline">\(\hat z\)</span> such that <span class="math inline">\(u = (1 - p)E[\mu_\lambda | \hat z]\)</span>.</p></li>
+<li><p><span class="math inline">\(\phi(u) = - \log f(\hat z) - \frac{1}{2s^2}(\hat z - u)^2 + \log f(0)\)</span></p></li>
+</ol>
+<p>Here <span class="math inline">\(\phi_\text{BL}^\text{PM}\)</span> indicates this penalty <span class="math inline">\(\phi\)</span> is associated with the posterior mean (“PM”) of the Bernoulli-Laplace (“BL”) normal means model.</p>
+<p><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The penalty does have some similarity with Lasso around <span class="math inline">\(0\)</span>.</p>
+</div>
+<div id="penalty-phi_textbltextsp-associated-with-inducing-sparsity" class="section level3">
+<h3>Penalty <span class="math inline">\(\phi_\text{BL}^\text{SP}\)</span> associated with inducing sparsity</h3>
+<p>As in <a href="bernoulli-gaussian.html">the Bernoulli-Gaussian case</a>, under Bernoulli-Laplace, <span class="math inline">\(E[\mu |z]\)</span> is shrunk towards <span class="math inline">\(0\)</span> but never strictly <span class="math inline">\(0\)</span> unless <span class="math inline">\(z = 0\)</span>. In order to impose sparsity, in practice, researchers usually set <span class="math inline">\(\hat\mu_B = 0\)</span> if <span class="math inline">\(p \geq 0.5\)</span>, or in other words,</p>
+<p><span class="math display">\[
+\frac{f_\delta(z)}{f_\lambda(z)} = \frac{N(z; 0, s^2)}{f_\lambda(z)} \geq \frac{1 - \pi}{\pi}
+\]</span> Since <span class="math inline">\(f_\lambda(z)\)</span> is a convolution of <span class="math inline">\(N(z; 0, s^2)\)</span> and a Laplace centered at 0, it should be a “watered-down” version of <span class="math inline">\(N(z; 0, s^2)\)</span>. <strong>Therefore, <span class="math inline">\(\frac{N(z; 0, s^2)}{f_\lambda(z)}\)</span> should be symmetric at 0 and decreasing in <span class="math inline">\(|z|\)</span>, i.e., they have stochastic orders. (?)</strong> It implies that <span class="math inline">\(p \geq 0.5 \Leftrightarrow |z| \leq z_{s, \pi, \lambda}^*\)</span></p>
+<p><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-5-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Meanwhile, if <span class="math inline">\(p &lt; 0.5 \Leftrightarrow \frac{N(z; 0, s^2)}{f_\lambda(z)} &lt; \frac{1 - \pi}{\pi}\Leftrightarrow |z| &gt; z_{s, \pi, \lambda}^*\)</span>, we’ll set <span class="math inline">\(\hat\mu_B\)</span> as the conditional mean conditioned on the assumption that <span class="math inline">\(\mu \neq 0\)</span>. That is,</p>
+<p><span class="math display">\[
+\hat\mu_{BL}^{SP} = \begin{cases}
+0 &amp; |z| \leq z_{s, \pi, \lambda}^*\\
+E[\mu_\lambda | z] &amp; \text{otherwise}
+\end{cases}
+\]</span></p>
+<p><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /> For a smaller standard deviation (large <span class="math inline">\(\lambda\)</span>) in the slab component, <span class="math inline">\(\hat\mu_{BL}^{SP}\)</span> behaves like a hard-thresholding followed by a soft-thresholding, although not exactly. Usually this behavior results from a <span class="math inline">\(l_1\)</span>-<span class="math inline">\(l_0\)</span> mixed regularization. As the standard deviation <span class="math inline">\(\to\infty\)</span>, <span class="math inline">\(\lambda\to0\)</span>, <span class="math inline">\(\hat\mu_{BL}^{SP}\)</span> converges to hard-thresholding.</p>
+</div>
+</div>
+<div id="bernoulli-gaussian-vs-bernoulli-laplace" class="section level2">
+<h2>Bernoulli-Gaussian vs Bernoulli-Laplace</h2>
+<div id="posterior-mean-1" class="section level3">
+<h3>Posterior mean</h3>
+<p><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>For the same standard deviation for the slab component, Bernoulli-Laplace penalizes large observations much more slightly than Bernoulli-Gaussian, essentially showing the difference between <span class="math inline">\(l_1\)</span> and <span class="math inline">\(l_2\)</span>.</p>
+</div>
+<div id="penalty-term-phipm-corresponding-to-the-posterior-mean" class="section level3">
+<h3>Penalty term <span class="math inline">\(\phi^PM\)</span> corresponding to the posterior mean</h3>
+<p><img src="figure/bernoulli-laplace.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /> As expected, Bernoulli-Gaussian is closer to the ridge regression penalty, whereas Bernoulli-Laplace the Lasso one.</p>
+</div>
+</div>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<!-- Insert the session information into the document -->
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.3.2 (2016-10-31)
+Platform: x86_64-apple-darwin13.4.0 (64-bit)
+Running under: macOS Sierra 10.12.3
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+loaded via a namespace (and not attached):
+ [1] backports_1.0.5  magrittr_1.5     rprojroot_1.2    tools_3.3.2     
+ [5] htmltools_0.3.5  yaml_2.1.14      Rcpp_0.12.9      codetools_0.2-15
+ [9] stringi_1.1.2    rmarkdown_1.3    knitr_1.15.1     git2r_0.18.0    
+[13] stringr_1.2.0    digest_0.6.11    evaluate_0.10   </code></pre>
+</div>
+
+<hr>
+<p>
+    This <a href="http://rmarkdown.rstudio.com">R Markdown</a> site was created with <a href="https://github.com/jdblischak/workflowr">workflowr</a>
+</p>
+<hr>
+
+<!-- To enable disqus, uncomment the section below and provide your disqus_shortname -->
+
+<!-- disqus
+  <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'rmarkdown'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+-->
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

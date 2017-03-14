@@ -210,7 +210,9 @@ $(document).ready(function () {
 <p>Working with <a href="http://stephenslab.uchicago.edu/">Matthew Stephens</a> and <a href="http://faculty.chicagobooth.edu/nicholas.polson/">Nicholas Polson</a>, I’m exploring various ideas in statistical shrinkage, selection, and sparsity, especially in Bayesian framework.</p>
 <ul>
 <li><a href="bernoulli-gaussian.html">Bernoulli-Gaussian spike-and-slab applied to normal means</a></li>
+<li><a href="bernoulli-laplace.html">Bernoulli-Laplace spike-and-slab applied to normal means</a></li>
 </ul>
+<p>The problem is whether we can find a <span class="math inline">\(\phi\)</span>, such that <span class="math inline">\(\hat\mu_B\)</span>, the optimal Bayesian estimator to a certain loss, is a solution to the regularized least squares with <span class="math inline">\(\phi\)</span> as the penalty. This framework of matching Tweedie’s formula to a proximal operator can potentially be generalized to the exponential family likelihood, not just normal means. The specific formula should be changed accordingly.</p>
 
 <hr>
 <p>
