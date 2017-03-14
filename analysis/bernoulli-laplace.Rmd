@@ -442,7 +442,7 @@ legend("bottomright", lty = c(1, 2), c("Bernoulli-Gaussian", "Bernoulli-Laplace"
 
 For the same standard deviation for the slab component, Bernoulli-Laplace penalizes large observations much more slightly than Bernoulli-Gaussian, essentially showing the difference between $l_1$ and $l_2$.
 
-### Penalty term $\phi^PM$ corresponding to the posterior mean
+### Penalty term $\phi^{PM}$ corresponding to the posterior mean
 
 ```{r, cache = TRUE, echo = FALSE}
 pi = 0.9
