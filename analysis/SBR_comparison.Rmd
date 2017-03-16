@@ -50,32 +50,47 @@ varseleval = function(x, y = tp_beta) {
 vec.norm = function (x) {
   if(all(x == 0)) {stop} else {x.norm = (x - mean(x)) / sqrt(sum((x - mean(x))^2)); return(x.norm)}
 }
+
+cv.sbr = function (A, z, lambda, nfold = 10) {
+  n = nrow(A)
+  fold = split(sample(n, n), 1:nfold)
+  mse_cv = c()
+  for (i in 1:nfold) {
+    betahat = sbr(A = A[-fold[[i]], ], z = z[-fold[[i]]], lambda)$x
+    mse_cv[i] = mean((A[fold[[i]], ]%*%betahat - z[fold[[i]]])^2)
+  }
+  return(mean(mse_cv))
+}
 ```
 
 ## $L_0$ regularization is robust
+
+The design matrix $X$ is column-wise normalized such tht for each column $X_j$, $\bar X_j = 0$, $\|X_j\|_2 = 1$.  The coefficients $\beta$ is generated such that $\eta = 90\%$ of them are zero, and $1 - \eta = 10\%$ of them are uniformly simulated from $[-a, a]$.  Thus the variance of $\beta = (1-\eta)a^2 / 3$.  Under this setting, the signal-to-noise ratio (SNR, in db) is defined as $10\log_{10}\left(\frac{p\text{var}\beta}{n\text{var}e}\right) = 10\log_{10}\frac{(1-\eta)pa^2}{3n\sigma^2}$.
 
 ```{r, cache = TRUE}
 p = 100
 n = 120
 d = 5
-SNR = 20
+SNR = 10
 spa = 0.9
 k = round(p * (1 - spa))
-sd_beta = 1
+eta = 1 - k / n
 sd_B = 1
+sd_beta = 1
+a_beta = sqrt(3 * sd_beta^2 / (1 - eta))
 
 set.seed(777)
 B = matrix(rnorm(p * d, sd = sd_B), ncol = d, nrow = p)
 V = B %*% t(B) + diag(p)
 X = rmvnorm(n = n, sigma = V)
+X = apply(X, 2, vec.norm)
 beta = rep(0, p)
-beta[sample(p, k)] = runif(k, -sqrt(3 * sd_beta^2), sqrt(3 * sd_beta^2))
+beta[sample(p, k)] = runif(k, -a_beta, a_beta)
 # beta[sample(p, k)] = rnorm(k, sd = sd_beta)
-sd_noise = sqrt(k * sd_beta^2 * (1 + d * sd_B^2) * 10^(-SNR / 10))
+sd_noise = sqrt(p * sd_beta^2 * 10^(-SNR / 10) / n)
 e = rnorm(n, sd = sd_noise)
 y = X %*% beta
 z = y + e
-snr = 10 * log10(mean(y^2) / mean(e^2))
 
 lambda = seq(0, 10, 0.5)
 L = length(lambda)
