@@ -46,6 +46,10 @@ varseleval = function(x, y = tp_beta) {
   fpn = length(fp)
   return(list(tp = tp, fp = fp, tpn = tpn, fpn = fpn))
 }
+
+vec.norm = function (x) {
+  if(all(x == 0)) {stop} else {x.norm = (x - mean(x)) / sqrt(sum((x - mean(x))^2)); return(x.norm)}
+}
 ```
 
 ## $L_0$ regularization is robust
