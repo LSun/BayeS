@@ -304,17 +304,20 @@ $$
 ```{r cache = TRUE, echo = FALSE}
 pi = 0.9
 s = 1
-z = seq(-6, 6, 0.01)
-sd = c(0.5, 1, 2, 5, 10, 100)
+z = seq(-10, 10, 0.01)
+sd = c(1, 2, 5, 10, 100)
 lambda = sqrt(2) / sd
 col = rainbow(length(sd))
-plot(z, z, type = "n", ylim = range(z), xlab = "Observation", ylab = "Posterior Mean", main = bquote(paste(E(mu/z), " with Bernoulli-Laplace prior, ", s == .(s), ", ", pi == .(pi))))
+plot(z, z, type = "n", ylim = range(z), xlab = "Observation y", ylab = expression(paste("Posterior Mean E[", theta,"|y]")), main = bquote(paste(hat(theta)(y), ", Spike-and-Slab Lasso with", ~p == .(pi), ", ", ~sigma[0] == .(s))))
 for (i in 1:length(lambda)) {
   lines(z, pm_bl(z, s, pi, lambda = lambda[i]), col = col[i])
 }
 abline(0, 1, lty = 3)
 abline(h = 0, lty = 3)
-legend("topleft", lty = 1, col = col[1:length(lambda)], legend = paste("sd =", sd), ncol = 2)
+legend("topleft", lty = 1, col = col[1:length(lambda)], 
+       #legend = paste("sd =", sd),
+       c(expression(sigma == 1), expression(sigma == 2), expression(sigma == 5), expression(sigma == 10), expression(sigma == 100)),
+       ncol = 2)
 ```
 The posterior mean has flavors of both hard- and soft-thresholding.
 
@@ -337,15 +340,18 @@ Here $\phi_\text{BL}^\text{PM}$ indicates this penalty $\phi$ is associated with
 ```{r, cache = TRUE, echo = FALSE}
 pi = 0.9
 s = 1
-u = seq(-10, 10, 0.01)
+u = seq(-6, 6, 0.01)
 sd = c(1, 2, 5, 10, 100)
 ymax = phi_bl(max(u), s, pi, sd = min(sd))
 col = rainbow(length(sd))
-plot(u, u, type = "n", ylim = c(0, ymax), xlab = "u", ylab = expression(phi[BL]^PM * (u)), main = bquote(paste(phi[BL]^PM, " for posterior mean of Bernoulli-Laplace ", ", ", s == .(s), ", ", pi == .(pi))))
+plot(u, u, type = "n", ylim = c(0, ymax), xlab = expression(theta), ylab = expression(phi(theta)), main = bquote(paste("Penalty ", phi, ", Spike-and-Slab Lasso with", ~p == .(pi), ", ", ~sigma[0] == .(s))))
 for (i in 1:length(sd)) {
   lines(u, phi_bl(u, s, pi, sd = sd[i]), col = col[i])
 }
-legend("top", lty = 1, col = col[1:length(sd)], legend = paste("sd =", sd))
+legend("top", lty = 1, col = col, legend = 
+         # paste(expression(sigma), "=", sd), 
+         c(expression(sigma == 1), expression(sigma == 2), expression(sigma == 5), expression(sigma == 10), expression(sigma == 100)),
+         ncol = 2)
 ```
 
 The penalty does have some similarity with Lasso around $0$.
@@ -425,19 +431,23 @@ For a smaller standard deviation (large $\lambda$) in the slab component, $\hat\
 ```{r, cache = TRUE, echo = FALSE}
 pi = 0.9
 s = 1
-z = seq(-6, 6, 0.01)
-sd = c(0.5, 1, 2, 5, 10, 100)
+z = seq(-10, 10, 0.01)
+sd = c(1, 2, 5, 10, 100)
 lambda = sqrt(2) / sd
 col = rainbow(length(sd))
-plot(z, z, type = "n", ylim = range(z), xlab = "Observation", ylab = "Posterior Mean", main = bquote(paste(E(mu/z), ", Bernoulli-Gaussian vs Bernoulli-Laplace, ", s == .(s), ", ", pi == .(pi))))
+plot(z, z, type = "n", ylim = range(z), xlab = "Observation y", ylab = expression(paste("Posterior Mean E[", theta,"|y]")), main = bquote(paste(hat(theta)(y), ", SS-Gaussian vs SS-Lasso with", p == .(pi), ", ", sigma[0] == .(s)
+                                                     )))
 for (i in 1:length(sd)) {
   lines(z, pm_bl(z, s, pi, lambda = lambda[i]), col = col[i], lty = 2)
   lines(z, pm_bg(z, s, sd[i], pi), col = col[i], lty = 1)
 }
 abline(0, 1, lty = 3)
 abline(h = 0, lty = 3)
-legend("topleft", lty = rep(1, length(sd)), col = col, legend = paste("sd =", sd), ncol = 2)
-legend("bottomright", lty = c(1, 2), c("Bernoulli-Gaussian", "Bernoulli-Laplace"), col = sample(colours(), 1))
+legend("topleft", lty = rep(1, length(sd)), col = col, legend = 
+         c(expression(sigma == 1), expression(sigma == 2), expression(sigma == 5), expression(sigma == 10), expression(sigma == 100)), 
+       ncol = 2)
+colb = sample(colours(), 1)
+legend("bottomright", lty = c(1, 2), c("SS-Gaussian", "SS-Lasso"), col = colb)
 ```
 
 For the same standard deviation for the slab component, Bernoulli-Laplace penalizes large observations much more slightly than Bernoulli-Gaussian, essentially showing the difference between $l_1$ and $l_2$.
@@ -452,15 +462,16 @@ sd = c(1, 2, 5, 10, 100)
 lambda = sqrt(2) / sd
 col = rainbow(length(sd))
 ymax = phi_bl(max(u), s, pi, sd = min(sd))
-plot(u, u, type = "n", ylim = c(0, ymax), xlab = "u", ylab = expression(phi^PM*(u)), main = bquote(paste(phi^PM, ", Bernoulli-Gaussian vs Bernoulli-Laplace, ", s == .(s), ", ", pi == .(pi))))
+plot(u, u, type = "n", ylim = c(0, ymax + 2), xlab = expression(theta), ylab = expression(phi(theta)), main = bquote(paste("Penalty ", phi, ", SS-Gaussian vs SS-Lasso with", ~p == .(pi), ", ", sigma[0] == .(s))))
 for (i in 1:length(sd)) {
   lines(u, phi_bl(u, s, pi, sd = sd[i]), col = col[i], lty = 2)
   lines(u, phi_bg(u, s, sd[i], pi), col = col[i], lty = 1)
 }
-legend("top", lty = 1, col = col[1:length(sd)], legend = paste("sd =", sd))
-colb = sample(colours(), 1)
-legend("bottomleft", lty = 1, col = colb, "Bernoulli-Gaussian")
-legend("bottomright", lty = 2, col = colb, "Bernoulli-Laplace")
+legend("top", lty = 1, col = col[1:length(sd)], legend = 
+         c(expression(sigma == 1), expression(sigma == 2), expression(sigma == 5), expression(sigma == 10), expression(sigma == 100)), ncol = 2
+       )
+legend("bottomleft", lty = 1, col = colb, "SS-Gaussian")
+legend("bottomright", lty = 2, col = colb, "SS-Lasso")
 ```
 As expected, Bernoulli-Gaussian is closer to the ridge regression penalty, whereas Bernoulli-Laplace the Lasso one.
 

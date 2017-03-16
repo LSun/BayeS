@@ -1,0 +1,182 @@
+---
+title: "SBRr Compared with Bayesian Bridge and Spike-and-Slab MCMC"
+author: "Lei Sun"
+date: 2017-02-10
+output: html_document
+---
+
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+**Last updated:** `r Sys.Date()`
+
+**Code version:** `r workflowr::extract_commit(".", 1)$sha1`
+
+## Introduction
+
+Using simulated data with correlated design, we compare `SBRr` with `[BayesBridge]` by [Polson et al., 2014] and `[BoomSpikeSlab]` by Steven L. Scott, on estimating multiple linear regression coefficients and selecting relevant variables in a high-dimensional setting.
+
+## Simulation
+
+```{r}
+library(glmnet)
+library(BayesBridge)
+library(BoomSpikeSlab)
+source("../code/SBRr.R")
+library(mvtnorm)
+```
+
+```{r}
+sparrep = function(x) {
+  L = length(x)
+  I = (x != 0)
+  spar = cbind((1:L)[I], x[I])
+  colnames(spar) = c("position", "value")
+  return(spar)
+}
+
+varseleval = function(x, y = tp_beta) {
+  tp = intersect(x, y)
+  fp = setdiff(x, y)
+  tpn = length(tp)
+  fpn = length(fp)
+  return(list(tp = tp, fp = fp, tpn = tpn, fpn = fpn))
+}
+```
+
+## $L_0$ regularization is robust
+
+```{r, cache = TRUE}
+p = 100
+n = 120
+d = 5
+SNR = 20
+spa = 0.9
+k = round(p * (1 - spa))
+sd_beta = 1
+sd_B = 1
+
+set.seed(777)
+B = matrix(rnorm(p * d, sd = sd_B), ncol = d, nrow = p)
+V = B %*% t(B) + diag(p)
+X = rmvnorm(n = n, sigma = V)
+beta = rep(0, p)
+beta[sample(p, k)] = runif(k, -sqrt(3 * sd_beta^2), sqrt(3 * sd_beta^2))
+# beta[sample(p, k)] = rnorm(k, sd = sd_beta)
+sd_noise = sqrt(k * sd_beta^2 * (1 + d * sd_B^2) * 10^(-SNR / 10))
+e = rnorm(n, sd = sd_noise)
+y = X %*% beta
+z = y + e
+snr = 10 * log10(mean(y^2) / mean(e^2))
+
+lambda = seq(0, 10, 0.5)
+L = length(lambda)
+betahat = matrix(nrow = L, ncol = p)
+for (i in 1:L) {
+  sb = sbr(A = X, z = z, lambda = lambda[i])
+  betahat[i, ] = sb$x
+}
+
+xlim = c(min(lambda), max(lambda))
+ylim = c(min(min(betahat), 0), max(max(betahat), 0))
+col = rainbow(p)
+plot(lambda, rep(0, L), type = "n", xlim = xlim, ylim = ylim, xlab = expression(lambda), ylab = "", main = "Solution Path by SBR")
+title(ylab = expression(hat(beta)), line = 2.5)
+lambda = lambda[order(lambda)]
+for (i in 1:p) {
+  lines(lambda, betahat[order(lambda), i], col = col[i])
+  abline(h = beta[i], col = col[i], lty = 3)
+}
+abline(h = 0, cex = 2)
+abline(v = sqrt(2 * log(p)), lty = 2)
+```
+
+## parameter estimates & variable selection comparison
+
+```{r, cache = TRUE}
+p = 100
+n = 120
+d = 5
+SNR = 20
+spa = 0.9
+k = round(p * (1 - spa))
+sd_beta = 1
+sd_B = 1
+set.seed(777)
+snr = MSE_ls = MSE_la = MSE_el = MSE_sb = MSE_bb = MSE_ss = tpn_el = tpn_la = tpn_sb = tpn_ss = fpn_el = fpn_la = fpn_sb = fpn_ss = c()
+
+
+for (ii in 1:500) {
+B = matrix(rnorm(p * d, sd = sd_B), ncol = d, nrow = p)
+V = B %*% t(B) + diag(p)
+X = rmvnorm(n = n, sigma = V)
+beta = rep(0, p)
+beta[sample(p, k)] = runif(k, -sqrt(3 * sd_beta^2), sqrt(3 * sd_beta^2))
+# beta[sample(p, k)] = rnorm(k, sd = sd_beta)
+
+tp_beta = sparrep(beta)[, 1]
+sd_noise = sqrt(k * sd_beta^2 * (1 + d * sd_B^2) * 10^(-SNR / 10))
+e = rnorm(n, sd = sd_noise)
+y = X %*% beta
+z = y + e
+snr[ii] = 10 * log10(mean(y^2) / mean(e^2))
+
+ls = lm(z ~ X - 1) # least squares
+la = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 1) # lasso
+el = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 0.5) # elastic net
+sb = sbr(A = X, z = z, lambda = sqrt(2 * log(p))) # l0 with `SBR`
+ss.prior = BoomSpikeSlab::SpikeSlabPrior(X, z, expected.model.size = round(p * 0.5))
+ss = BoomSpikeSlab::lm.spike(z ~ X - 1, niter = 1000, prior = ss.prior, ping = 0) #spike-and-slab with `BoomSpikeSlab`
+capture.output(bb <- BayesBridge::bridge.reg(y = z, X, nsamp = 1000), file = "/dev/null") # Bayesian bridge
+
+MSE_ls[ii] = mean((coef(ls)- beta)^2)
+MSE_la[ii] = mean((coef(la, s = "lambda.min")[-1] - beta)^2)
+MSE_el[ii] = mean((coef(el, s = "lambda.min")[-1] - beta)^2)
+MSE_bb[ii] = mean((colMeans(bb$beta) - beta)^2)
+MSE_sb[ii] = mean((sb$x - beta)^2)
+MSE_ss[ii] = mean((summary(ss, burn = 500, order = FALSE)$coef[, 1] - beta)^2)
+
+varsel_la = sparrep(coef(la, s = "lambda.min")[-1])[, 1]
+varsel_el = sparrep(coef(el, s = "lambda.min")[-1])[, 1]
+varsel_sb = sparrep(sb$x)[, 1]
+varsel_ss = (1:p)[summary(ss, burn = 500, order = FALSE)$coef[, 5] > 0.5]
+
+tpn_la[ii] = varseleval(varsel_la)$tpn
+fpn_la[ii] = varseleval(varsel_la)$fpn
+tpn_el[ii] = varseleval(varsel_el)$tpn
+fpn_el[ii] = varseleval(varsel_el)$fpn
+tpn_ss[ii] = varseleval(varsel_ss)$tpn
+fpn_ss[ii] = varseleval(varsel_ss)$fpn
+tpn_sb[ii] = varseleval(varsel_sb)$tpn
+fpn_sb[ii] = varseleval(varsel_sb)$fpn
+}
+
+res = cbind(snr, MSE_ls, MSE_la, MSE_el, MSE_bb, MSE_ss, MSE_sb, tpn_la, tpn_el, tpn_ss, tpn_sb, fpn_la, fpn_el, fpn_ss, fpn_sb)
+write.table(res, "../output/res_0.9_20_5", quote = FALSE, row.names = FALSE)
+```
+
+```{r}
+res = read.table("../output/res_0.9_20_5", header = TRUE)
+par(cex.axis = 0.8)
+par(mar = c(6.1, 2.5, 2.1, 1.1))
+method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
+boxplot(res[, 2:7], names = method.names, las = 2, ylab = " ", main = "Empirical MSE")
+
+par(mfrow = c(1, 2))
+boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = " ", las = 2, main = "Correct Selection")
+abline(h = 10, lty = 2, col = "red")
+boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = " ", las = 2, main = "False Selection")
+```
+
+[BayesBridge]: https://cran.r-project.org/web/packages/BayesBridge/index.html
+[Polson et al., 2014]: http://onlinelibrary.wiley.com/doi/10.1111/rssb.12042/suppinfo
+[BoomSpikeSlab]: https://cran.r-project.org/web/packages/BoomSpikeSlab/index.html
+
+## Session Information
+
+```{r session-info}
+```

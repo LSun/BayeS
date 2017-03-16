@@ -190,20 +190,26 @@ pm = function(z, s, sigma, pi) {
 	return(pm)
 }
 
-z = seq(-6, 6, 0.01)
+z = seq(-10, 10, 0.01)
 s = 1
 pi = 0.9
-pm1 = pm(z, s, 1, pi)
-pm2 = pm(z, s, 10, pi)
-pm3 = pm(z, s, 100, pi)
-plot(z, pm2, type = "l", xlab = "Observation z", ylab = "Posterior Mean",
-     col = "blue", main = bquote(paste("Bernoulli-Gaussian shrinkage with", ~pi == .(pi), ",", ~s == .(s)))
+sigma = c(1, 2, 5, 10, 100)
+pm1 = pm(z, s, sigma[1], pi)
+pm2 = pm(z, s, sigma[2], pi)
+pm3 = pm(z, s, sigma[3], pi)
+pm4 = pm(z, s, sigma[4], pi)
+pm5 = pm(z, s, sigma[5], pi)
+plot(z, pm4, type = "n", xlab = "Observation y", ylab = expression(paste("Posterior Mean E[", theta,"|y]")),
+     col = "blue", main = bquote(paste(hat(theta)(y), ", Spike-and-Slab Gaussian with", ~p == .(pi), ",", ~sigma[0] == .(s)))
      )
-lines(z, pm1, col = "black")
-abline(0, 1, lty = 2, col = "green")
-abline(h = 0, lty = 2, col = "yellow")
-lines(z, pm3, col = "red")
-legend("topleft", col = c("black", "blue", "red"), lty = 1, c(expression(sigma == 1), expression(sigma == 10), expression(sigma == 100)))
+lines(z, pm1, col = rainbow(5)[1])
+lines(z, pm2, col = rainbow(5)[2])
+lines(z, pm3, col = rainbow(5)[3])
+lines(z, pm4, col = rainbow(5)[4])
+lines(z, pm5, col = rainbow(5)[5])
+abline(0, 1, lty = 3)
+abline(h = 0, lty = 3)
+legend("topleft", col = rainbow(5), lty = 1, c(expression(sigma == 1), expression(sigma == 2), expression(sigma == 5), expression(sigma == 10), expression(sigma == 100)), ncol = 2)
 ```
 
 Note that the posterior mean is never strictly zero unless $z = 0$, yet as $\sigma\to\infty$, it behaves more and more like hard-thresholding.
@@ -349,8 +355,8 @@ pi = 0.9
 u = seq(-6, 6, 0.01)
 ymax = max(phi(u, s, sigma = 1, pi))
 plot(u, phi(u, s, sigma = 1, pi), type = "n", ylim = c(0, ymax),
-     xlab = expression(u), ylab = expression(phi(u)),
-     main = bquote(paste(~pi == .(pi), ",", ~s == .(s)))
+     xlab = expression(theta), ylab = expression(phi(theta)),
+     main = bquote(paste("Penalty ", phi, ", Spike-and-Slab Gaussian with", ~p == .(pi), ",", ~sigma[0] == .(s)))
      )
 nsigma = c(1, 2, 5, 10, 100)
 k = 1
@@ -365,7 +371,7 @@ legend("top", col = rainbow(length(nsigma))[1:(k - 1)], lty = 1,
          sigma == 5,
          sigma == 10,
          sigma == 100
-       )
+       ), ncol = 2
        )
 ```
 
