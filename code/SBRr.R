@@ -70,7 +70,7 @@
 #
 #---------------------------------------------------------------------
 
-library(Matrix)
+require(Matrix)
 
 sbr = function (A, z, lambda, control = list()) {
   lambda = 2 * lambda
@@ -112,7 +112,7 @@ sbr = function (A, z, lambda, control = list()) {
 	FLAG = 1         # Termination of SBR if FLAG = 0 (normal) or -1 (anomaly)
 	iter = 0
 	Jit[1] = crit
-#	sol_cour = c()    # R'\Az(vecm1);
+  sol_cour = 0    # R'\Az(vecm1);
 
 # USER INITIALIZATION
 if (!is.null(qinit)) {
@@ -138,7 +138,8 @@ if (VERB) {cat("0:", "\t", "\t", crit, "\n")}
 if (explore == 'all') {
 	while ((FLAG == 1) & (lvecm1 < K)) {
 		# The current value of the cost function J(x) is already stored in crit
-        dcritopt = 0;       # J_new - J_old
+        dcritopt = 0;       # J_new - J_old, dcritopt is always the lowest obj value
+                            # in current loop
 #        mopt = [];          # position of the new column to insert
 #        indopt = [];        # location of the index to remove in vecm1
         mouv = 0;           # 1 if insertion, -1 if removal
@@ -224,11 +225,16 @@ if (explore == 'all') {
                 if (VERB) {cat(iter, ":", "\t", "+", mopt, "\t", crit, "\n")}
             } else {          # REMOVAL
                 # Update of R
+              if (indopt < nrow(R)) {
                 FF = R[(indopt + 1) : nrow(R), (indopt + 1) : ncol(R)];
                 E = R[indopt, (indopt + 1) : ncol(R)];
                 R = R[-indopt, ];
                 R = R[, -indopt];
                 R[indopt : nrow(R), indopt : ncol(R)] = chol(t(FF) %*% FF + E %*% t(E));
+              } else {
+                R = R[-indopt, ];
+                R = R[, -indopt];
+              }
                 mopt = vecm1[indopt];
                 vecm1 = vecm1[-indopt];
                 # vecm0 is updated in the beginning of the loop
@@ -334,12 +340,17 @@ if (explore == 'all') {
                 if (VERB) {cat(iter, ":", "\t", "+", mopt, "\t", crit, "\n")}
             } else {          # REMOVAL
                 # Update of R
+              if (indopt < nrow(R)) {
                 FF = R[(indopt + 1) : nrow(R), (indopt + 1) : ncol(R)];
                 E = R[indopt, (indopt + 1) : ncol(R)];
                 R = R[-indopt, ];
                 R = R[, -indopt];
                 R[indopt : nrow(R), indopt : ncol(R)] = chol(t(FF) %*% FF + E %*% t(E));
-                mopt = vecm1[indopt];
+              } else {
+                R = R[-indopt, ];
+                R = R[, -indopt];
+              }
+              mopt = vecm1[indopt];
                 vecm1 = vecm1[-indopt];
                 # vecm0 is updated in the beginning of the loop
                 lvecm0 = lvecm0 + 1;
@@ -358,7 +369,9 @@ if (explore == 'all') {
 # Final amplitude computation
 #
 x = rep(0, M);
-x[vecm1] = solve(R, sol_cour);
+if (!all(sol_cour == 0)) {
+  x[vecm1] = solve(R, sol_cour);
+}
 x.sparse = cbind(which(x != 0), x[which(x != 0)])
 colnames(x.sparse) = c("position", "value")
 
