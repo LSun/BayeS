@@ -309,8 +309,8 @@ div.tocify {
 </div>
 
 
-<p><strong>Last updated:</strong> 2017-04-05</p>
-<p><strong>Code version:</strong> 9aefa22</p>
+<p><strong>Last updated:</strong> 2017-04-07</p>
+<p><strong>Code version:</strong> 1e8f917</p>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
 <p>Using simulated data with correlated design matrix <span class="math inline">\(X\)</span>, we compare <code>SBRr</code> with <a href="https://cran.r-project.org/web/packages/BayesBridge/index.html"><code>BayesBridge</code></a> by <a href="http://onlinelibrary.wiley.com/doi/10.1111/rssb.12042/suppinfo">Polson et al., 2014</a> and <a href="https://cran.r-project.org/web/packages/BoomSpikeSlab/index.html"><code>BoomSpikeSlab</code></a> by Steven L. Scott, on estimating multiple linear regression coefficients and selecting relevant variables in a high-dimensional setting.</p>
@@ -321,9 +321,25 @@ div.tocify {
 <p>In our setting, <span class="math inline">\(n = 120\)</span>, <span class="math inline">\(p = 100\)</span>, <span class="math inline">\(d = 5\)</span>. <span class="math inline">\(\beta\)</span> is a length <span class="math inline">\(100\)</span> vector, in which <span class="math inline">\(90\)</span> are zero, and <span class="math inline">\(10\)</span> are <span class="math inline">\(\left\{-5, -4, -3, -2, -1, 1, 2, 3, 4, 5\right\}\)</span>. <span class="math inline">\(\text{SNR} = 20\)</span>.</p>
 <p><img src="figure/SBR_comparison.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
-<div id="performance-comparison" class="section level2">
-<h2>Performance comparison</h2>
+<div id="performance-comparison-snr-20" class="section level2">
+<h2>Performance comparison: SNR = 20</h2>
 <p><img src="figure/SBR_comparison.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/SBR_comparison.Rmd/unnamed-chunk-5-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="performance-comparison-snr-15" class="section level2">
+<h2>Performance comparison: SNR = 15</h2>
+<p><img src="figure/SBR_comparison.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/SBR_comparison.Rmd/unnamed-chunk-7-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="performance-comparison-snr-10" class="section level2">
+<h2>Performance comparison: SNR = 10</h2>
+<p><img src="figure/SBR_comparison.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/SBR_comparison.Rmd/unnamed-chunk-9-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="performance-comparison-snr-5" class="section level2">
+<h2>Performance comparison: SNR = 5</h2>
+<p><img src="figure/SBR_comparison.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/SBR_comparison.Rmd/unnamed-chunk-11-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="performance-comparison-snr-0" class="section level2">
+<h2>Performance comparison: SNR = 0</h2>
+<p><img src="figure/SBR_comparison.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/SBR_comparison.Rmd/unnamed-chunk-13-2.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="session-information" class="section level2">
 <h2>Session Information</h2>
@@ -344,10 +360,10 @@ other attached packages:
 [7] foreach_1.4.3       Matrix_1.2-7.1     
 
 loaded via a namespace (and not attached):
- [1] workflowr_0.4.0  Rcpp_0.12.10     codetools_0.2-15 lattice_0.20-34 
- [5] digest_0.6.11    rprojroot_1.2    grid_3.3.2       backports_1.0.5 
+ [1] workflowr_0.3.0  Rcpp_0.12.10     codetools_0.2-15 lattice_0.20-34 
+ [5] digest_0.6.9     rprojroot_1.2    grid_3.3.2       backports_1.0.5 
  [9] git2r_0.18.0     magrittr_1.5     evaluate_0.10    stringi_1.1.2   
-[13] rmarkdown_1.3    iterators_1.0.8  tools_3.3.2      stringr_1.2.0   
+[13] rmarkdown_1.3    iterators_1.0.8  tools_3.3.2      stringr_1.1.0   
 [17] yaml_2.1.14      htmltools_0.3.5  knitr_1.15.1    </code></pre>
 </div>
 
