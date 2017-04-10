@@ -117,7 +117,7 @@ cv_mse = cv.sbr(A = X, z = z, lambda = lambda)
 xlim = c(min(lambda), max(lambda))
 ylim = c(min(min(betahat), 0), max(max(betahat), 0))
 col = rainbow(p)
-plot(lambda, rep(0, L), type = "n", xlim = xlim, ylim = ylim, xlab = expression(lambda), ylab = "", main = "Solution Path by Single Best Replacement (SBR")
+plot(lambda, rep(0, L), type = "n", xlim = xlim, ylim = ylim, xlab = expression(lambda), ylab = "", main = "Solution Path by Single Best Replacement (SBR)")
 title(ylab = expression(hat(beta)), line = 2.5)
 lambda = lambda[order(lambda)]
 for (i in 1:p) {
@@ -128,7 +128,7 @@ abline(h = 0, cex = 2)
 abline(v = lambda[which.min(cv_mse$mse_mean)], lty = 2)
 ```
 
-## Performance comparison
+## Performance comparison: SNR = 20
 
 ```{r, cache = TRUE, echo = FALSE}
 p = 100
@@ -202,6 +202,88 @@ res = read.table("../output/res_0.9_20_5", header = TRUE)
 par(cex.axis = 0.8)
 par(mar = c(6.1, 2.5, 2.1, 1.1))
 method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
+boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error", ylim = c(0, 0.4))
+
+par(mfrow = c(1, 2))
+boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Comparison on True Positive")
+abline(h = 10, lty = 2, col = "red")
+boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Comparison on False Positive")
+```
+
+## Performance comparison: SNR = 15
+
+```{r, cache = TRUE, echo = FALSE}
+p = 100
+n = 120
+d = 5
+SNR = 15
+spa = 0.9
+k = round(p * (1 - spa))
+eta = 1 - k / n
+sd_B = 1
+set.seed(777)
+snr = MSE_ls = MSE_la = MSE_el = MSE_sb = MSE_bb = MSE_ss = tpn_el = tpn_la = tpn_sb = tpn_ss = fpn_el = fpn_la = fpn_sb = fpn_ss = c()
+
+
+for (ii in 1:1000) {
+B = matrix(rnorm(p * d, sd = sd_B), ncol = d, nrow = p)
+V = B %*% t(B) + diag(p)
+X = rmvnorm(n = n, sigma = V)
+X = apply(X, 2, vec.norm)
+beta = rep(0, p)
+beta[sample(p, k)] = c(1:(k / 2), -(1:(k / 2)))
+tp_beta = sparrep(beta)[, 1]
+
+sd_noise = sqrt(mean((X %*% beta)^2) * 10^(- SNR / 10))
+e = rnorm(n, sd = sd_noise)
+y = X %*% beta
+z = y + e
+
+snr[ii] = 10 * log10(mean(y^2) / mean(e^2))
+
+
+ls = lm(z ~ X - 1) # least squares
+la = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 1) # lasso
+el = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 0.5) # elastic net
+lambda.sb = seq(0, 0.1, 0.01)
+cv_mse = cv.sbr(A = X, z = z, lambda = lambda.sb)
+lambda.sb.opt = lambda.sb[which.min(cv_mse$mse_mean)]
+sb = sbr(A = X, z = z, lambda = lambda.sb.opt) # l0 with `SBR` using lambda from CV
+ss.prior = BoomSpikeSlab::SpikeSlabPrior(X, z, expected.model.size = round(p * 0.5))
+ss = BoomSpikeSlab::lm.spike(z ~ X - 1, niter = 1000, prior = ss.prior, ping = 0) #spike-and-slab with `BoomSpikeSlab`
+capture.output(bb <- BayesBridge::bridge.reg(y = z, X, nsamp = 1000), file = "/dev/null") # Bayesian bridge
+
+MSE_ls[ii] = mean((coef(ls)- beta)^2)
+MSE_la[ii] = mean((coef(la, s = "lambda.min")[-1] - beta)^2)
+MSE_el[ii] = mean((coef(el, s = "lambda.min")[-1] - beta)^2)
+MSE_bb[ii] = mean((colMeans(bb$beta) - beta)^2)
+MSE_sb[ii] = mean((sb$x - beta)^2)
+MSE_ss[ii] = mean((summary(ss, burn = 500, order = FALSE)$coef[, 1] - beta)^2)
+
+varsel_la = sparrep(coef(la, s = "lambda.min")[-1])[, 1]
+varsel_el = sparrep(coef(el, s = "lambda.min")[-1])[, 1]
+varsel_sb = sparrep(sb$x)[, 1]
+varsel_ss = (1:p)[summary(ss, burn = 500, order = FALSE)$coef[, 5] > 0.5]
+
+tpn_la[ii] = varseleval(varsel_la)$tpn
+fpn_la[ii] = varseleval(varsel_la)$fpn
+tpn_el[ii] = varseleval(varsel_el)$tpn
+fpn_el[ii] = varseleval(varsel_el)$fpn
+tpn_ss[ii] = varseleval(varsel_ss)$tpn
+fpn_ss[ii] = varseleval(varsel_ss)$fpn
+tpn_sb[ii] = varseleval(varsel_sb)$tpn
+fpn_sb[ii] = varseleval(varsel_sb)$fpn
+}
+
+res = cbind(snr, MSE_ls, MSE_la, MSE_el, MSE_bb, MSE_ss, MSE_sb, tpn_la, tpn_el, tpn_ss, tpn_sb, fpn_la, fpn_el, fpn_ss, fpn_sb)
+write.table(res, "../output/res_0.9_15_5", quote = FALSE, row.names = FALSE)
+```
+
+```{r, cache = TRUE, echo = FALSE}
+res = read.table("../output/res_0.9_15_5", header = TRUE)
+par(cex.axis = 0.8)
+par(mar = c(6.1, 2.5, 2.1, 1.1))
+method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
 boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error")
 
 par(mfrow = c(1, 2))
@@ -210,6 +292,251 @@ abline(h = 10, lty = 2, col = "red")
 boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Comparison on False Positive")
 ```
 
+## Performance comparison: SNR = 10
+
+```{r, cache = TRUE, echo = FALSE}
+p = 100
+n = 120
+d = 5
+SNR = 10
+spa = 0.9
+k = round(p * (1 - spa))
+eta = 1 - k / n
+sd_B = 1
+set.seed(777)
+snr = MSE_ls = MSE_la = MSE_el = MSE_sb = MSE_bb = MSE_ss = tpn_el = tpn_la = tpn_sb = tpn_ss = fpn_el = fpn_la = fpn_sb = fpn_ss = c()
+
+
+for (ii in 1:1000) {
+B = matrix(rnorm(p * d, sd = sd_B), ncol = d, nrow = p)
+V = B %*% t(B) + diag(p)
+X = rmvnorm(n = n, sigma = V)
+X = apply(X, 2, vec.norm)
+beta = rep(0, p)
+beta[sample(p, k)] = c(1:(k / 2), -(1:(k / 2)))
+tp_beta = sparrep(beta)[, 1]
+
+sd_noise = sqrt(mean((X %*% beta)^2) * 10^(- SNR / 10))
+e = rnorm(n, sd = sd_noise)
+y = X %*% beta
+z = y + e
+
+snr[ii] = 10 * log10(mean(y^2) / mean(e^2))
+
+
+ls = lm(z ~ X - 1) # least squares
+la = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 1) # lasso
+el = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 0.5) # elastic net
+lambda.sb = seq(0, 0.1, 0.01)
+cv_mse = cv.sbr(A = X, z = z, lambda = lambda.sb)
+lambda.sb.opt = lambda.sb[which.min(cv_mse$mse_mean)]
+sb = sbr(A = X, z = z, lambda = lambda.sb.opt) # l0 with `SBR` using lambda from CV
+ss.prior = BoomSpikeSlab::SpikeSlabPrior(X, z, expected.model.size = round(p * 0.5))
+ss = BoomSpikeSlab::lm.spike(z ~ X - 1, niter = 1000, prior = ss.prior, ping = 0) #spike-and-slab with `BoomSpikeSlab`
+capture.output(bb <- BayesBridge::bridge.reg(y = z, X, nsamp = 1000), file = "/dev/null") # Bayesian bridge
+
+MSE_ls[ii] = mean((coef(ls)- beta)^2)
+MSE_la[ii] = mean((coef(la, s = "lambda.min")[-1] - beta)^2)
+MSE_el[ii] = mean((coef(el, s = "lambda.min")[-1] - beta)^2)
+MSE_bb[ii] = mean((colMeans(bb$beta) - beta)^2)
+MSE_sb[ii] = mean((sb$x - beta)^2)
+MSE_ss[ii] = mean((summary(ss, burn = 500, order = FALSE)$coef[, 1] - beta)^2)
+
+varsel_la = sparrep(coef(la, s = "lambda.min")[-1])[, 1]
+varsel_el = sparrep(coef(el, s = "lambda.min")[-1])[, 1]
+varsel_sb = sparrep(sb$x)[, 1]
+varsel_ss = (1:p)[summary(ss, burn = 500, order = FALSE)$coef[, 5] > 0.5]
+
+tpn_la[ii] = varseleval(varsel_la)$tpn
+fpn_la[ii] = varseleval(varsel_la)$fpn
+tpn_el[ii] = varseleval(varsel_el)$tpn
+fpn_el[ii] = varseleval(varsel_el)$fpn
+tpn_ss[ii] = varseleval(varsel_ss)$tpn
+fpn_ss[ii] = varseleval(varsel_ss)$fpn
+tpn_sb[ii] = varseleval(varsel_sb)$tpn
+fpn_sb[ii] = varseleval(varsel_sb)$fpn
+}
+
+res = cbind(snr, MSE_ls, MSE_la, MSE_el, MSE_bb, MSE_ss, MSE_sb, tpn_la, tpn_el, tpn_ss, tpn_sb, fpn_la, fpn_el, fpn_ss, fpn_sb)
+write.table(res, "../output/res_0.9_10_5", quote = FALSE, row.names = FALSE)
+```
+
+```{r, cache = TRUE, echo = FALSE}
+res = read.table("../output/res_0.9_10_5", header = TRUE)
+par(cex.axis = 0.8)
+par(mar = c(6.1, 2.5, 2.1, 1.1))
+method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
+boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error")
+
+par(mfrow = c(1, 2))
+boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Comparison on True Positive")
+abline(h = 10, lty = 2, col = "red")
+boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Comparison on False Positive")
+```
+
+## Performance comparison: SNR = 5
+
+```{r, cache = TRUE, echo = FALSE}
+p = 100
+n = 120
+d = 5
+SNR = 5
+spa = 0.9
+k = round(p * (1 - spa))
+eta = 1 - k / n
+sd_B = 1
+set.seed(777)
+snr = MSE_ls = MSE_la = MSE_el = MSE_sb = MSE_bb = MSE_ss = tpn_el = tpn_la = tpn_sb = tpn_ss = fpn_el = fpn_la = fpn_sb = fpn_ss = c()
+
+
+for (ii in 1:1000) {
+B = matrix(rnorm(p * d, sd = sd_B), ncol = d, nrow = p)
+V = B %*% t(B) + diag(p)
+X = rmvnorm(n = n, sigma = V)
+X = apply(X, 2, vec.norm)
+beta = rep(0, p)
+beta[sample(p, k)] = c(1:(k / 2), -(1:(k / 2)))
+tp_beta = sparrep(beta)[, 1]
+
+sd_noise = sqrt(mean((X %*% beta)^2) * 10^(- SNR / 10))
+e = rnorm(n, sd = sd_noise)
+y = X %*% beta
+z = y + e
+
+snr[ii] = 10 * log10(mean(y^2) / mean(e^2))
+
+
+ls = lm(z ~ X - 1) # least squares
+la = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 1) # lasso
+el = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 0.5) # elastic net
+lambda.sb = seq(0, 0.1, 0.01)
+cv_mse = cv.sbr(A = X, z = z, lambda = lambda.sb)
+lambda.sb.opt = lambda.sb[which.min(cv_mse$mse_mean)]
+sb = sbr(A = X, z = z, lambda = lambda.sb.opt) # l0 with `SBR` using lambda from CV
+ss.prior = BoomSpikeSlab::SpikeSlabPrior(X, z, expected.model.size = round(p * 0.5))
+ss = BoomSpikeSlab::lm.spike(z ~ X - 1, niter = 1000, prior = ss.prior, ping = 0) #spike-and-slab with `BoomSpikeSlab`
+capture.output(bb <- BayesBridge::bridge.reg(y = z, X, nsamp = 1000), file = "/dev/null") # Bayesian bridge
+
+MSE_ls[ii] = mean((coef(ls)- beta)^2)
+MSE_la[ii] = mean((coef(la, s = "lambda.min")[-1] - beta)^2)
+MSE_el[ii] = mean((coef(el, s = "lambda.min")[-1] - beta)^2)
+MSE_bb[ii] = mean((colMeans(bb$beta) - beta)^2)
+MSE_sb[ii] = mean((sb$x - beta)^2)
+MSE_ss[ii] = mean((summary(ss, burn = 500, order = FALSE)$coef[, 1] - beta)^2)
+
+varsel_la = sparrep(coef(la, s = "lambda.min")[-1])[, 1]
+varsel_el = sparrep(coef(el, s = "lambda.min")[-1])[, 1]
+varsel_sb = sparrep(sb$x)[, 1]
+varsel_ss = (1:p)[summary(ss, burn = 500, order = FALSE)$coef[, 5] > 0.5]
+
+tpn_la[ii] = varseleval(varsel_la)$tpn
+fpn_la[ii] = varseleval(varsel_la)$fpn
+tpn_el[ii] = varseleval(varsel_el)$tpn
+fpn_el[ii] = varseleval(varsel_el)$fpn
+tpn_ss[ii] = varseleval(varsel_ss)$tpn
+fpn_ss[ii] = varseleval(varsel_ss)$fpn
+tpn_sb[ii] = varseleval(varsel_sb)$tpn
+fpn_sb[ii] = varseleval(varsel_sb)$fpn
+}
+
+res = cbind(snr, MSE_ls, MSE_la, MSE_el, MSE_bb, MSE_ss, MSE_sb, tpn_la, tpn_el, tpn_ss, tpn_sb, fpn_la, fpn_el, fpn_ss, fpn_sb)
+write.table(res, "../output/res_0.9_5_5", quote = FALSE, row.names = FALSE)
+```
+
+```{r, cache = TRUE, echo = FALSE}
+res = read.table("../output/res_0.9_5_5", header = TRUE)
+par(cex.axis = 0.8)
+par(mar = c(6.1, 2.5, 2.1, 1.1))
+method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
+boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error")
+
+par(mfrow = c(1, 2))
+boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Comparison on True Positive")
+abline(h = 10, lty = 2, col = "red")
+boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Comparison on False Positive")
+```
+
+## Performance comparison: SNR = 0
+
+```{r, cache = TRUE, echo = FALSE}
+p = 100
+n = 120
+d = 5
+SNR = 0
+spa = 0.9
+k = round(p * (1 - spa))
+eta = 1 - k / n
+sd_B = 1
+set.seed(777)
+snr = MSE_ls = MSE_la = MSE_el = MSE_sb = MSE_bb = MSE_ss = tpn_el = tpn_la = tpn_sb = tpn_ss = fpn_el = fpn_la = fpn_sb = fpn_ss = c()
+
+
+for (ii in 1:1000) {
+B = matrix(rnorm(p * d, sd = sd_B), ncol = d, nrow = p)
+V = B %*% t(B) + diag(p)
+X = rmvnorm(n = n, sigma = V)
+X = apply(X, 2, vec.norm)
+beta = rep(0, p)
+beta[sample(p, k)] = c(1:(k / 2), -(1:(k / 2)))
+tp_beta = sparrep(beta)[, 1]
+
+sd_noise = sqrt(mean((X %*% beta)^2) * 10^(- SNR / 10))
+e = rnorm(n, sd = sd_noise)
+y = X %*% beta
+z = y + e
+
+snr[ii] = 10 * log10(mean(y^2) / mean(e^2))
+
+
+ls = lm(z ~ X - 1) # least squares
+la = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 1) # lasso
+el = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 0.5) # elastic net
+lambda.sb = seq(0, 0.1, 0.01)
+cv_mse = cv.sbr(A = X, z = z, lambda = lambda.sb)
+lambda.sb.opt = lambda.sb[which.min(cv_mse$mse_mean)]
+sb = sbr(A = X, z = z, lambda = lambda.sb.opt) # l0 with `SBR` using lambda from CV
+ss.prior = BoomSpikeSlab::SpikeSlabPrior(X, z, expected.model.size = round(p * 0.5))
+ss = BoomSpikeSlab::lm.spike(z ~ X - 1, niter = 1000, prior = ss.prior, ping = 0) #spike-and-slab with `BoomSpikeSlab`
+capture.output(bb <- BayesBridge::bridge.reg(y = z, X, nsamp = 1000), file = "/dev/null") # Bayesian bridge
+
+MSE_ls[ii] = mean((coef(ls)- beta)^2)
+MSE_la[ii] = mean((coef(la, s = "lambda.min")[-1] - beta)^2)
+MSE_el[ii] = mean((coef(el, s = "lambda.min")[-1] - beta)^2)
+MSE_bb[ii] = mean((colMeans(bb$beta) - beta)^2)
+MSE_sb[ii] = mean((sb$x - beta)^2)
+MSE_ss[ii] = mean((summary(ss, burn = 500, order = FALSE)$coef[, 1] - beta)^2)
+
+varsel_la = sparrep(coef(la, s = "lambda.min")[-1])[, 1]
+varsel_el = sparrep(coef(el, s = "lambda.min")[-1])[, 1]
+varsel_sb = sparrep(sb$x)[, 1]
+varsel_ss = (1:p)[summary(ss, burn = 500, order = FALSE)$coef[, 5] > 0.5]
+
+tpn_la[ii] = varseleval(varsel_la)$tpn
+fpn_la[ii] = varseleval(varsel_la)$fpn
+tpn_el[ii] = varseleval(varsel_el)$tpn
+fpn_el[ii] = varseleval(varsel_el)$fpn
+tpn_ss[ii] = varseleval(varsel_ss)$tpn
+fpn_ss[ii] = varseleval(varsel_ss)$fpn
+tpn_sb[ii] = varseleval(varsel_sb)$tpn
+fpn_sb[ii] = varseleval(varsel_sb)$fpn
+}
+
+res = cbind(snr, MSE_ls, MSE_la, MSE_el, MSE_bb, MSE_ss, MSE_sb, tpn_la, tpn_el, tpn_ss, tpn_sb, fpn_la, fpn_el, fpn_ss, fpn_sb)
+write.table(res, "../output/res_0.9_0_5", quote = FALSE, row.names = FALSE)
+```
+
+```{r, cache = TRUE, echo = FALSE}
+res = read.table("../output/res_0.9_0_5", header = TRUE)
+par(cex.axis = 0.8)
+par(mar = c(6.1, 2.5, 2.1, 1.1))
+method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
+boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error")
+
+par(mfrow = c(1, 2))
+boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Comparison on True Positive")
+abline(h = 10, lty = 2, col = "red")
+boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Comparison on False Positive")
+```
 
 [`BayesBridge`]: https://cran.r-project.org/web/packages/BayesBridge/index.html
 [Polson et al., 2014]: http://onlinelibrary.wiley.com/doi/10.1111/rssb.12042/suppinfo
