@@ -1,4 +1,4 @@
-tfprox = function (z, w, D, penalty, pen.par = NULL, lambda, beta.init = NULL, rho.init = NULL, h = NULL, max.iter = 100, objtol = 1e-6) {
+tfprox.admm = function (z, w, D, penalty, pen.par = NULL, lambda, beta.init = NULL, rho.init = NULL, h = NULL, max.iter = 100, objtol = 1e-6) {
   if (is.null(h)) {
     h = 1 / max(svd(D %*% diag(1 / w) %*% t(D))$d)
   }

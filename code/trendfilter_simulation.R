@@ -1,7 +1,7 @@
 library(genlasso)
 library(glmgen)
-source("code/trendfilter.R")
-
+source("code/trendfilter.admm.R")
+source("code/trendfilter.fixpt.R")
 
 ## fused lasso
 set.seed(777)
