@@ -1,0 +1,271 @@
+---
+title: "Single Best Replacement Performance Comparison: High Dimensional"
+author: "Lei Sun"
+date: 2017-04-16
+output: html_document
+---
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+<!-- Add your analysis here -->
+
+## Introduction
+
+We are now comparing the performance of several sparse linear regression procedures under high-dimensional setting.
+
+
+```{r, message = FALSE, include = FALSE}
+library(glmnet)
+library(BayesBridge)
+library(BoomSpikeSlab)
+source("../code/SBRr.R")
+library(mvtnorm)
+```
+
+```{r, include = FALSE}
+sparrep = function(x) {
+  position = which(abs(x) > 0)
+  value = x[position]
+  return(cbind(position, value))
+}
+
+varseleval = function(x, y = tp_beta) {
+  tp = intersect(x, y)
+  fp = setdiff(x, y)
+  tpn = length(tp)
+  fpn = length(fp)
+  return(list(tp = tp, fp = fp, tpn = tpn, fpn = fpn))
+}
+
+vec.norm = function (x) {
+  if(all(x == 0)) {stop} else {x.norm = (x - mean(x)) / sqrt(sum((x - mean(x))^2)); return(x.norm)}
+}
+
+cv.sbr = function (A, z, lambda, nfold = 10) {
+  n = nrow(A)
+  p = ncol(A)
+  fold = split(sample(n, n), 1:nfold)
+  mse_cv = mse_mean = mse_sd = c()
+  for (j in 1:length(lambda)) {
+    for (i in 1:nfold) {
+      betahat.sbr = sbr(A = A[-fold[[i]], ], z = z[-fold[[i]]], lambda[j])
+      betahat = betahat.sbr$x
+      # mse_cv[i] = mean((A[fold[[i]], ]%*%betahat - z[fold[[i]]])^2)
+      betahat_active = betahat.sbr$x.sparse[, 1]
+      betahat_active_est = coef(lm(z[-fold[[i]]] ~ A[-fold[[i]], betahat_active] - 1))
+      mse_cv[i] = mean((A[fold[[i]], betahat_active] %*% betahat_active_est - z[fold[[i]]])^2)
+    }
+    mse_mean[j] = mean(mse_cv)
+    mse_sd[j] = sd(mse_cv)
+  }
+  return(list(lambda = lambda, mse_mean = mse_mean, mse_sd = mse_sd))
+}
+
+sparserep = function (beta) {
+  position = which(abs(beta) > 0)
+  value = beta[position]
+  return(cbind(position, value))
+}
+```
+
+
+## $\text{SNR} = 20, p = 500, n = 600$
+
+```{r, cache = TRUE, echo = FALSE}
+p = 500
+n = 600
+d = 10
+SNR = 20
+spa = 0.9
+k = round(p * (1 - spa))
+eta = 1 - k / n
+sd_B = 1
+set.seed(777)
+snr = MSE_ls = MSE_la = MSE_el = MSE_sb = MSE_bb = MSE_ss = tpn_el = tpn_la = tpn_sb = tpn_ss = fpn_el = fpn_la = fpn_sb = fpn_ss = time_ls = time_la_cv = time_el_cv = time_sb_cv = time_sb = time_ss = time_bb = c()
+
+
+for (ii in 1:200) {
+B = matrix(rnorm(p * d, sd = sd_B), ncol = d, nrow = p)
+V = B %*% t(B) + diag(p)
+X = rmvnorm(n = n, sigma = V)
+X = apply(X, 2, vec.norm)
+beta = rep(0, p)
+beta[sample(p, k)] = c(1:(k / 2), -(1:(k / 2)))
+tp_beta = sparrep(beta)[, 1]
+
+sd_noise = sqrt(mean((X %*% beta)^2) * 10^(- SNR / 10))
+e = rnorm(n, sd = sd_noise)
+y = X %*% beta
+z = y + e
+
+snr[ii] = 10 * log10(mean(y^2) / mean(e^2))
+
+
+ls.time <- system.time(ls <- lm(z ~ X - 1)) # least squares
+la.time.cv <- system.time(la <- glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 1)) # lasso
+el.time.cv <- system.time(el <- glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 0.5)) # elastic net
+lambda.sb = seq(0, 0.1, 0.01)
+sb.time.cv <- system.time(cv_mse <- cv.sbr(A = X, z = z, lambda = lambda.sb))
+lambda.sb.opt = lambda.sb[which.min(cv_mse$mse_mean)]
+sb.time <- system.time(sb <- sbr(A = X, z = z, lambda = lambda.sb.opt)) # l0 with `SBR` using lambda from CV
+ss.prior = BoomSpikeSlab::SpikeSlabPrior(X, z, expected.model.size = round(p * 0.5))
+ss.time <- system.time(ss <- BoomSpikeSlab::lm.spike(z ~ X - 1, niter = 1000, prior = ss.prior, ping = 0)) #spike-and-slab with `BoomSpikeSlab`
+bb.time <- system.time(capture.output(bb <- BayesBridge::bridge.reg(y = z, X, nsamp = 1000), file = "/dev/null")) # Bayesian bridge
+
+MSE_ls[ii] = mean((coef(ls)- beta)^2)
+MSE_la[ii] = mean((coef(la, s = "lambda.min")[-1] - beta)^2)
+MSE_el[ii] = mean((coef(el, s = "lambda.min")[-1] - beta)^2)
+MSE_bb[ii] = mean((colMeans(bb$beta) - beta)^2)
+MSE_sb[ii] = mean((sb$x - beta)^2)
+MSE_ss[ii] = mean((summary(ss, burn = 500, order = FALSE)$coef[, 1] - beta)^2)
+time_ls[ii] = as.numeric(ls.time[3])
+time_la_cv[ii] = as.numeric(la.time.cv[3])
+time_el_cv[ii] = as.numeric(el.time.cv[3])
+time_sb_cv[ii] = as.numeric(sb.time.cv[3])
+time_ss[ii] = as.numeric(ss.time[3])
+time_bb[ii] = as.numeric(bb.time[3])
+
+varsel_la = sparrep(coef(la, s = "lambda.min")[-1])[, 1]
+varsel_el = sparrep(coef(el, s = "lambda.min")[-1])[, 1]
+varsel_sb = sparrep(sb$x)[, 1]
+varsel_ss = (1:p)[summary(ss, burn = 500, order = FALSE)$coef[, 5] > 0.5]
+
+tpn_la[ii] = varseleval(varsel_la)$tpn
+fpn_la[ii] = varseleval(varsel_la)$fpn
+tpn_el[ii] = varseleval(varsel_el)$tpn
+fpn_el[ii] = varseleval(varsel_el)$fpn
+tpn_ss[ii] = varseleval(varsel_ss)$tpn
+fpn_ss[ii] = varseleval(varsel_ss)$fpn
+tpn_sb[ii] = varseleval(varsel_sb)$tpn
+fpn_sb[ii] = varseleval(varsel_sb)$fpn
+}
+
+res = cbind(snr, MSE_ls, MSE_la, MSE_el, MSE_bb, MSE_ss, MSE_sb, tpn_la, tpn_el, tpn_ss, tpn_sb, fpn_la, fpn_el, fpn_ss, fpn_sb, time_ls, time_la_cv, time_el_cv, time_sb_cv, time_sb, time_ss, time_sb)
+write.table(res, "../output/res_0.9_20_10_500_600", quote = FALSE, row.names = FALSE)
+```
+
+```{r, cache = TRUE, echo = FALSE}
+res = read.table("../output/res_0.9_20_10_500_600", header = TRUE)
+par(cex.axis = 0.8)
+par(mar = c(6.1, 2.5, 2.1, 1.1))
+method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
+boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error", ylim = c(0, 0.4))
+
+par(mfrow = c(1, 2))
+boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Comparison on True Positive")
+abline(h = 10, lty = 2, col = "red")
+boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Comparison on False Positive")
+```
+
+
+## $\text{SNR} = 20, p = 500, n = 100$
+
+```{r, cache = TRUE, echo = FALSE}
+p = 500
+n = 200
+d = 10
+SNR = 20
+spa = 0.9
+k = round(p * (1 - spa))
+eta = 1 - k / n
+sd_B = 1
+set.seed(777)
+snr = MSE_ls = MSE_la = MSE_el = MSE_sb = MSE_bb = MSE_ss = tpn_el = tpn_la = tpn_sb = tpn_ss = fpn_el = fpn_la = fpn_sb = fpn_ss = time_ls = time_la_cv = time_el_cv = time_sb_cv = time_sb = time_ss = time_bb = c()
+
+
+for (ii in 1:200) {
+B = matrix(rnorm(p * d, sd = sd_B), ncol = d, nrow = p)
+V = B %*% t(B) + diag(p)
+X = rmvnorm(n = n, sigma = V)
+X = apply(X, 2, vec.norm)
+beta = rep(0, p)
+beta[sample(p, k)] = c(1:(k / 2), -(1:(k / 2)))
+tp_beta = sparrep(beta)[, 1]
+
+sd_noise = sqrt(mean((X %*% beta)^2) * 10^(- SNR / 10))
+e = rnorm(n, sd = sd_noise)
+y = X %*% beta
+z = y + e
+
+snr[ii] = 10 * log10(mean(y^2) / mean(e^2))
+
+
+ls.time <- system.time(ls <- lm(z ~ X - 1)) # least squares
+la.time.cv <- system.time(la <- glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 1)) # lasso
+el.time.cv <- system.time(el <- glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 0.5)) # elastic net
+lambda.sb = seq(0, 0.1, 0.01)
+sb.time.cv <- system.time(cv_mse <- cv.sbr(A = X, z = z, lambda = lambda.sb))
+lambda.sb.opt = lambda.sb[which.min(cv_mse$mse_mean)]
+sb.time <- system.time(sb <- sbr(A = X, z = z, lambda = lambda.sb.opt)) # l0 with `SBR` using lambda from CV
+ss.prior = BoomSpikeSlab::SpikeSlabPrior(X, z, expected.model.size = round(p * 0.5))
+ss.time <- system.time(ss <- BoomSpikeSlab::lm.spike(z ~ X - 1, niter = 1000, prior = ss.prior, ping = 0)) #spike-and-slab with `BoomSpikeSlab`
+bb.time <- system.time(capture.output(bb <- BayesBridge::bridge.reg(y = z, X, nsamp = 1000), file = "/dev/null")) # Bayesian bridge
+
+MSE_ls[ii] = mean((coef(ls)- beta)^2)
+MSE_la[ii] = mean((coef(la, s = "lambda.min")[-1] - beta)^2)
+MSE_el[ii] = mean((coef(el, s = "lambda.min")[-1] - beta)^2)
+MSE_bb[ii] = mean((colMeans(bb$beta) - beta)^2)
+MSE_sb[ii] = mean((sb$x - beta)^2)
+MSE_ss[ii] = mean((summary(ss, burn = 500, order = FALSE)$coef[, 1] - beta)^2)
+time_ls[ii] = as.numeric(ls.time[3])
+time_la_cv[ii] = as.numeric(la.time.cv[3])
+time_el_cv[ii] = as.numeric(el.time.cv[3])
+time_sb_cv[ii] = as.numeric(sb.time.cv[3])
+time_ss[ii] = as.numeric(ss.time[3])
+time_bb[ii] = as.numeric(bb.time[3])
+
+varsel_la = sparrep(coef(la, s = "lambda.min")[-1])[, 1]
+varsel_el = sparrep(coef(el, s = "lambda.min")[-1])[, 1]
+varsel_sb = sparrep(sb$x)[, 1]
+varsel_ss = (1:p)[summary(ss, burn = 500, order = FALSE)$coef[, 5] > 0.5]
+
+tpn_la[ii] = varseleval(varsel_la)$tpn
+fpn_la[ii] = varseleval(varsel_la)$fpn
+tpn_el[ii] = varseleval(varsel_el)$tpn
+fpn_el[ii] = varseleval(varsel_el)$fpn
+tpn_ss[ii] = varseleval(varsel_ss)$tpn
+fpn_ss[ii] = varseleval(varsel_ss)$fpn
+tpn_sb[ii] = varseleval(varsel_sb)$tpn
+fpn_sb[ii] = varseleval(varsel_sb)$fpn
+}
+
+res = cbind(snr, MSE_ls, MSE_la, MSE_el, MSE_bb, MSE_ss, MSE_sb, tpn_la, tpn_el, tpn_ss, tpn_sb, fpn_la, fpn_el, fpn_ss, fpn_sb, time_ls, time_la_cv, time_el_cv, time_sb_cv, time_sb, time_ss, time_sb)
+write.table(res, "../output/res_0.9_20_10_500_200", quote = FALSE, row.names = FALSE)
+```
+
+```{r, cache = TRUE, echo = FALSE}
+res = read.table("../output/res_0.9_20_10_500_200", header = TRUE)
+par(cex.axis = 0.8)
+par(mar = c(6.1, 2.5, 2.1, 1.1))
+method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
+boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error", ylim = c(0, 0.4))
+
+par(mfrow = c(1, 2))
+boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Comparison on True Positive")
+abline(h = 10, lty = 2, col = "red")
+boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Comparison on False Positive")
+```
+
+
+## Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```

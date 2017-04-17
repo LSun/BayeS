@@ -1,4 +1,4 @@
-tfprox.fixpt = function (z, w = NULL, D, dual.init = NULL, lambda, penalty, pen.par = NULL, objtol = 1e-10, eta = 0.2, v_tol = 1e-10, max_iter = 1000) {
+tfprox.fixpt = function (z, w = NULL, D, dual.init = NULL, lambda, penalty, pen.par = NULL, objtol = 1e-10, eta = 0.2, v_tol = 1e-10, max.iter = 1000) {
   if (is.null(pen.par)) {pen.par = 1}
 
   n = length(z)
@@ -127,12 +127,14 @@ phi = function (D, beta, penalty, pen.par) {
 }
 
 
+# proximal operator for common penalty functions
+# options include "l1," "double-pareto," "lq", "l0"
 prox = function(z, w, penalty, pen.par) {
   if (penalty == "l1") {
     prox_z = sign(z) * pmax(abs(z) - w, 0)
     return(prox_z)
   } else {
-    if (penalty == "dp") {
+    if (penalty == "double-pareto") {
 
       a = pen.par[1]
       prox_z = rep(0, length(z))

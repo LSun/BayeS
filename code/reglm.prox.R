@@ -26,7 +26,7 @@ reglm.prox = function (y, X, lambda, penalty, par = NULL, beta_init = NULL, max_
   v = v_new
   iter_count = iter_count + 1
   }
-  
+
   return(list(beta = beta, obj_vec = obj_vec, obj_val = obj_val, iter_count = iter_count, converged = converged))
 }
 
@@ -67,7 +67,7 @@ prox = function(z, w, penalty, pen.par) {
     return(prox_z)
   } else {
     if (penalty == "dp") {
-      
+
       a = pen.par[1]
       prox_z = rep(0, length(z))
       I1 = (abs(z) > (2 * sqrt(w) - a))
@@ -76,7 +76,7 @@ prox = function(z, w, penalty, pen.par) {
       zI1I2.abs = abs(zI1I2)
       prox_zI1I2 = (zI1I2.abs - a + sqrt((zI1I2.abs + a)^2 - 4 * w)) / 2
       prox_z[I1 & I2] = prox_zI1I2 * sign(zI1I2)
-      
+
       if (sqrt(w) > a) {
         zI1nI2 = z[I1 & (!I2)]
         zI1nI2.abs = abs(zI1nI2)
@@ -85,26 +85,26 @@ prox = function(z, w, penalty, pen.par) {
         f0 = zI1nI2.abs^2 / 2
         prox_zI1nI2 = (fprox_zI1nI2 < f0) * prox_zI1nI2
         prox_z[I1 & !I2] = prox_zI1nI2 * sign(zI1nI2)
-      } 
-      
+      }
+
       return(prox_z)
-      
+
     } else {
       if (penalty == "lq") {
         q = pen.par[1]
         bwq = (2 * w * (1 - q))^(1 / (2 - q))
         hwq = bwq + w * q * bwq^(q - 1)
-        
+
         # threshold rule for lq when 0 < q < 1
         prox_z = rep(0, length(z))
         I = (abs(z) > hwq)
-        
+
         gamma = abs(z[I])
         get_gamma = SQUAREM::squarem(par = gamma, fixptfn = lqfixpt, z = gamma, w = w, q = q)
         gamma = get_gamma$par
-        
+
         prox_z[I] = gamma * sign(z[I])
-        
+
         return(prox_z)
       } else {
         if (penalty == "l0") {

@@ -22,19 +22,27 @@ D = getD1d(n)
 
 
 fit.genlasso.init = genlasso::trendfilter(y = z, ord = 0)
-beta.init = coef(fit.genlasso.init, lambda = lambda, type = "both")$beta
-rho.init = coef(fit.genlasso.init, lambda = lambda, type = "both")$u
 cv.tf = cv.trendfilter(fit.genlasso.init)
 lambda = cv.tf$lambda.min
+
 fit.genlasso = glmgen::trendfilter(z, k = 0, family='gaussian', lambda=lambda)
-fit.prox.l1 = tfprox(z, w, D, penalty = "l1", lambda = lambda, objtol = 1e-10, max.iter = 1e4)
-fit.genlasso.init = genlasso::trendfilter(y = z, ord = 0)
+
 beta.init = coef(fit.genlasso.init, lambda = lambda, type = "both")$beta
-rho.init = coef(fit.genlasso.init, lambda = lambda, type = "both")$u
+dual.init = coef(fit.genlasso.init, lambda = lambda, type = "both")$u
+fit.prox.l1 = tfprox.fixpt(z, w, D, penalty = "l1", lambda = lambda, objtol = 1e-10, max.iter = 1e3)
+fit.prox.l1.init = tfprox.fixpt(z, w, D, penalty = "l1", lambda = lambda, dual.init = dual.init, objtol = 1e-10, max.iter = 1e3)
+
+beta.init = coef(fit.genlasso.init, lambda = lambda, type = "both")$beta
+dual.init = coef(fit.genlasso.init, lambda = lambda, type = "both")$u
+
+fit.prox.dp.fixpt = tfprox.fixpt(z, w, D, penalty = "double-pareto", lambda = lambda * 10, objtol = 1e-10, max.iter = 1e3)
+fit.prox.dp.fixpt.init = tfprox.fixpt(z, w, D, dual.init = dual.init, penalty = "double-pareto", lambda = lambda * 10, objtol = 1e-10, max.iter = 1e3)
+
+
 fit.prox.l1.init = tfprox(z, w, D, penalty = "l1", lambda = lambda, beta.init = beta.init, rho.init = rho.init, objtol = 1e-10, max.iter = 1e4)
 fit.prox.dp = tfprox(z, w, D, penalty = "double-pareto", lambda = lambda, objtol = 1e-10, max.iter = 1e4)
 fit.prox.dp.init = tfprox(z, w, D, penalty = "double-pareto", lambda = lambda, beta.init = beta.init, rho.init = rho.init, objtol = 1e-10, max.iter = 1e4)
-points(fit.genlasso$beta, pch = 19, cex = 0.5)
+points(fit.genlasso$beta, pch = 19, cex = 0.5, col = "green")
 points(fit.prox.l1$beta, pch = 21, cex = 0.5, col = "green")
 points(fit.prox.dp$beta, pch = 19, cex = 0.5, col = "blue")
 points(fit.prox.dp$beta, pch = 19, cex = 0.5, col = "blue")
