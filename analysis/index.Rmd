@@ -12,7 +12,8 @@ Working with [Matthew Stephens] and [Nicholas Polson], I'm exploring various ide
 
 The problem is whether we can find a $\phi$, such that $\hat\mu_B$, the optimal Bayesian estimator to a certain loss, is a solution to the regularized least squares with $\phi$ as the penalty.  This framework of matching Tweedie's formula to a proximal operator can potentially be generalized to the exponential family likelihood, not just normal means.  The specific formula should be changed accordingly.
 
-* [Single best replacement (SBR) for $l_0$-regularized linear regression](SBR_comparison.html)
+* [Single best replacement (SBR) for $l_0$-regularized linear regression: Accuracy](SBR_comparison.html)
+* [Single best replacement (SBR) for $l_0$-regularized linear regression: Time](SBR_comparison_2.html)
 
 $l_0$-regularized linear regression is NP-hard, yet under high SNR and high collinearity, the [single best replacement (SBR)](http://ieeexplore.ieee.org/document/5930380/) algorithm, developed in the signal processing community, is compared favorably to $l_1$ methods like lasso, elastic net, $l_q, q\in(0, 1)$ method like BayesBridge, and the gold standard spike-and-slab MCMC.
 
