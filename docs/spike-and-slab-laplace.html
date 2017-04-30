@@ -11,9 +11,9 @@
 
 <meta name="author" content="Lei Sun" />
 
-<meta name="date" content="2017-04-16" />
+<meta name="date" content="2017-03-13" />
 
-<title>Single Best Replacement Performance Comparison: Time</title>
+<title>Spike-and-slab Laplace</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -302,9 +302,9 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Single Best Replacement Performance Comparison: Time</h1>
+<h1 class="title toc-ignore">Spike-and-slab Laplace</h1>
 <h4 class="author"><em>Lei Sun</em></h4>
-<h4 class="date"><em>2017-04-16</em></h4>
+<h4 class="date"><em>2017-03-13</em></h4>
 
 </div>
 
@@ -320,15 +320,13 @@ shared across the workflowr files. -->
 <!-- Add your analysis here -->
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>We are now comparing the performance of several sparse linear regression procedures under high-dimensional setting.</p>
-</div>
-<div id="textsnr-20-p-100-n-120" class="section level2">
-<h2><span class="math inline">\(\text{SNR} = 20, p = 100, n = 120\)</span></h2>
-<p><img src="figure/SBR_comparison_2.rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
-</div>
-<div id="textsnr-20-p-200-n-300" class="section level2">
-<h2><span class="math inline">\(\text{SNR} = 20, p = 200, n = 300\)</span></h2>
-<p><img src="figure/SBR_comparison_2.rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The spike-and-slab Laplace normal means problem is formulated as follows</p>
+<p><span class="math display">\[
+\begin{array}{l}
+z|\mu \sim N(\mu, s^2)\\
+g(\mu) = \pi\frac{\lambda_0}2e^{-\lambda_0|\mu|} + (1 - \pi)\frac\lambda 2e^{-\lambda|\mu|}
+\end{array}
+\]</span></p>
 </div>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
@@ -344,17 +342,11 @@ locale:
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
-other attached packages:
-[1] mvtnorm_1.0-5       BoomSpikeSlab_0.7.0 Boom_0.5           
-[4] MASS_7.3-45         BayesBridge_0.6     glmnet_2.0-5       
-[7] foreach_1.4.3       Matrix_1.2-8       
-
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.10     codetools_0.2-15 lattice_0.20-34  digest_0.6.11   
- [5] rprojroot_1.2    grid_3.3.3       backports_1.0.5  git2r_0.18.0    
- [9] magrittr_1.5     evaluate_0.10    stringi_1.1.2    rmarkdown_1.3   
-[13] iterators_1.0.8  tools_3.3.3      stringr_1.2.0    yaml_2.1.14     
-[17] htmltools_0.3.5  knitr_1.15.1    </code></pre>
+ [1] backports_1.0.5 magrittr_1.5    rprojroot_1.2   tools_3.3.3    
+ [5] htmltools_0.3.5 yaml_2.1.14     Rcpp_0.12.10    stringi_1.1.2  
+ [9] rmarkdown_1.3   knitr_1.15.1    git2r_0.18.0    stringr_1.2.0  
+[13] digest_0.6.11   evaluate_0.10  </code></pre>
 </div>
 
 <hr>

@@ -308,7 +308,7 @@ z = seq(-10, 10, 0.01)
 sd = c(1, 2, 5, 10, 100)
 lambda = sqrt(2) / sd
 col = rainbow(length(sd))
-plot(z, z, type = "n", ylim = range(z), xlab = "Observation y", ylab = expression(paste("Posterior Mean E[", theta,"|y]")), main = bquote(paste(hat(theta)(y), ", Spike-and-Slab Lasso with", ~p == .(pi), ", ", ~sigma[0] == .(s))))
+plot(z, z, type = "n", ylim = range(z), xlab = "Observation y", ylab = expression(paste("Posterior Mean E[", beta,"|y]")), main = bquote(paste(hat(beta)^BL, ", Bernoulli-Laplace with", ~theta == .(1-pi), ", ", ~sigma[e] == .(s))))
 for (i in 1:length(lambda)) {
   lines(z, pm_bl(z, s, pi, lambda = lambda[i]), col = col[i])
 }
@@ -316,7 +316,7 @@ abline(0, 1, lty = 3)
 abline(h = 0, lty = 3)
 legend("topleft", lty = 1, col = col[1:length(lambda)], 
        #legend = paste("sd =", sd),
-       c(expression(sigma == 1), expression(sigma == 2), expression(sigma == 5), expression(sigma == 10), expression(sigma == 100)),
+       c(expression(sigma[beta] == 1), expression(sigma[beta] == 2), expression(sigma[beta] == 5), expression(sigma[beta] == 10), expression(sigma[beta] == 100)),
        ncol = 2)
 ```
 The posterior mean has flavors of both hard- and soft-thresholding.
@@ -344,13 +344,13 @@ u = seq(-6, 6, 0.01)
 sd = c(1, 2, 5, 10, 100)
 ymax = phi_bl(max(u), s, pi, sd = min(sd))
 col = rainbow(length(sd))
-plot(u, u, type = "n", ylim = c(0, ymax), xlab = expression(theta), ylab = expression(phi(theta)), main = bquote(paste("Penalty ", phi, ", Spike-and-Slab Lasso with", ~p == .(pi), ", ", ~sigma[0] == .(s))))
+plot(u, u, type = "n", ylim = c(0, ymax), xlab = expression(beta), ylab = expression(phi(beta)), main = bquote(paste("Penalty ", phi^BL, ", Bernoulli-Laplace with", ~theta == .(1-pi), ", ", ~sigma[e] == .(s))))
 for (i in 1:length(sd)) {
   lines(u, phi_bl(u, s, pi, sd = sd[i]), col = col[i])
 }
 legend("top", lty = 1, col = col, legend = 
          # paste(expression(sigma), "=", sd), 
-         c(expression(sigma == 1), expression(sigma == 2), expression(sigma == 5), expression(sigma == 10), expression(sigma == 100)),
+         c(expression(sigma[beta] == 1), expression(sigma[beta] == 2), expression(sigma[beta] == 5), expression(sigma[beta] == 10), expression(sigma[beta] == 100)),
          ncol = 2)
 ```
 

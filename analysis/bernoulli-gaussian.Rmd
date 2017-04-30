@@ -199,8 +199,8 @@ pm2 = pm(z, s, sigma[2], pi)
 pm3 = pm(z, s, sigma[3], pi)
 pm4 = pm(z, s, sigma[4], pi)
 pm5 = pm(z, s, sigma[5], pi)
-plot(z, pm4, type = "n", xlab = "Observation y", ylab = expression(paste("Posterior Mean E[", theta,"|y]")),
-     col = "blue", main = bquote(paste(hat(theta)(y), ", Spike-and-Slab Gaussian with", ~p == .(pi), ",", ~sigma[0] == .(s)))
+plot(z, pm4, type = "n", xlab = "Observation y", ylab = expression(paste("Posterior Mean E[", beta,"|y]")),
+     col = "blue", main = bquote(paste(hat(beta)^BG, ", Bernoulli-Gaussian with", ~theta == .(1-pi), ",", ~sigma[e] == .(s)))
      )
 lines(z, pm1, col = rainbow(5)[1])
 lines(z, pm2, col = rainbow(5)[2])
@@ -209,7 +209,7 @@ lines(z, pm4, col = rainbow(5)[4])
 lines(z, pm5, col = rainbow(5)[5])
 abline(0, 1, lty = 3)
 abline(h = 0, lty = 3)
-legend("topleft", col = rainbow(5), lty = 1, c(expression(sigma == 1), expression(sigma == 2), expression(sigma == 5), expression(sigma == 10), expression(sigma == 100)), ncol = 2)
+legend("topleft", col = rainbow(5), lty = 1, c(expression(sigma[beta] == 1), expression(sigma[beta] == 2), expression(sigma[beta] == 5), expression(sigma[beta] == 10), expression(sigma[beta] == 100)), ncol = 2)
 ```
 
 Note that the posterior mean is never strictly zero unless $z = 0$, yet as $\sigma\to\infty$, it behaves more and more like hard-thresholding.
@@ -355,8 +355,8 @@ pi = 0.9
 u = seq(-6, 6, 0.01)
 ymax = max(phi(u, s, sigma = 1, pi))
 plot(u, phi(u, s, sigma = 1, pi), type = "n", ylim = c(0, ymax),
-     xlab = expression(theta), ylab = expression(phi(theta)),
-     main = bquote(paste("Penalty ", phi, ", Spike-and-Slab Gaussian with", ~p == .(pi), ",", ~sigma[0] == .(s)))
+     xlab = expression(beta), ylab = expression(phi(beta)),
+     main = bquote(paste("Penalty ", phi^BG, ", Bernoulli-Gaussian with", ~theta == .(1-pi), ",", ~sigma[e] == .(s)))
      )
 nsigma = c(1, 2, 5, 10, 100)
 k = 1
@@ -366,11 +366,11 @@ for (sigma in nsigma) {
 }
 legend("top", col = rainbow(length(nsigma))[1:(k - 1)], lty = 1,
        legend = expression(
-         sigma == 1,
-         sigma == 2,
-         sigma == 5,
-         sigma == 10,
-         sigma == 100
+         sigma[beta] == 1,
+         sigma[beta] == 2,
+         sigma[beta] == 5,
+         sigma[beta] == 10,
+         sigma[beta] == 100
        ), ncol = 2
        )
 ```

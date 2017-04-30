@@ -102,7 +102,10 @@ e = rnorm(n, sd = sd_noise)
 y = X %*% beta
 z = y + e
 
-lambda = seq(0, 0.1, 0.01)
+lambda = seq(0, 0.1, length = 20)
+cv_mse = cv.sbr(A = X, z = z, lambda = lambda)
+lambda.cv = lambda[which.min(cv_mse$mse_mean)]
+lambda = exp(seq(log(lambda.cv / 2), log(lambda.cv * 4), length = 100))
 L = length(lambda)
 betahat = matrix(nrow = L, ncol = p)
 for (i in 1:L) {
@@ -110,22 +113,28 @@ for (i in 1:L) {
   betahat[i, ] = sb$x
 }
 
-cv_mse = cv.sbr(A = X, z = z, lambda = lambda)
-# sparserep(sbr(A = X, z = z, lambda = lambda[which.min(cv_mse$mse_mean)])$x)
-# sparserep(beta)
 
-xlim = c(min(lambda), max(lambda))
+xlim = range(log(lambda))
 ylim = c(min(min(betahat), 0), max(max(betahat), 0))
 col = rainbow(p)
-plot(lambda, rep(0, L), type = "n", xlim = xlim, ylim = ylim, xlab = expression(lambda), ylab = "", main = "Solution Path by Single Best Replacement (SBR)")
+plot(lambda, rep(0, L), type = "n", xlim = xlim, ylim = ylim, xlab = expression(log(lambda)), ylab = "", main = expression(paste("Solution Path of ", L[0], " regularization by SBR")))
 title(ylab = expression(hat(beta)), line = 2.5)
 lambda = lambda[order(lambda)]
 for (i in 1:p) {
-  lines(lambda, betahat[order(lambda), i], col = col[i])
+  lines(log(lambda), betahat[order(lambda), i], col = col[i])
   abline(h = beta[i], col = col[i], lty = 3)
 }
-abline(h = 0, cex = 2)
-abline(v = lambda[which.min(cv_mse$mse_mean)], lty = 2)
+abline(v = log(lambda.cv), lty = 2)
+
+
+fit.cv = glmnet::cv.glmnet(x = X, y = z, intercept = FALSE, alpha = 1)
+fit = glmnet::glmnet(x = X, y = z, intercept = FALSE, alpha = 1)
+plot(fit, xvar = "lambda", ylim = c(-5, 5), xlab = expression(log(lambda)), main = "Solution Path of Lasso by glmnet", ylab = "", xlim = log(c(fit.cv$lambda.min / 2, fit.cv$lambda.min * 4)))
+title(ylab = expression(hat(beta)), line = 2.5)
+for (i in 1:p) {
+  abline(h = beta[i], col = col[i], lty = 3)
+}
+abline(v = log(fit.cv$lambda.min), lty = 2)
 ```
 
 ## Performance comparison: SNR = 20
@@ -202,12 +211,12 @@ res = read.table("../output/res_0.9_20_5", header = TRUE)
 par(cex.axis = 0.8)
 par(mar = c(6.1, 2.5, 2.1, 1.1))
 method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
-boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error", ylim = c(0, 0.4))
+boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Empirical Mean Squared Error", ylim = c(0, 0.4))
 
 par(mfrow = c(1, 2))
-boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Comparison on True Positive")
+boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Number of True Selection")
 abline(h = 10, lty = 2, col = "red")
-boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Comparison on False Positive")
+boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Number of False Selection")
 ```
 
 ## Performance comparison: SNR = 15

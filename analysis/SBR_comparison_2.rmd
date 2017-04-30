@@ -147,7 +147,7 @@ res = read.table("../output/res_0.9_20_5_100_120", header = TRUE)
 par(cex.axis = 0.8)
 par(mar = c(6.1, 2.5, 2.1, 1.1))
 method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
-boxplot(res[, c(2, 4, 6, 9, 8, 7)], names = method.names, las = 2, ylab = "Run Time", main = "Comparison on Run Time in Seconds (n = 120, p = 100)", ylim = c(0, 15))
+boxplot(res[, c(2, 4, 6, 9, 8, 7)], names = method.names, las = 2, ylab = "Run Time", main = "Run Time in Seconds (n = 120, p = 100)", ylim = c(0, 15))
 ```
 
 
@@ -214,7 +214,7 @@ res = read.table("../output/res_0.9_20_5_200_300", header = TRUE)
 par(cex.axis = 0.8)
 par(mar = c(6.1, 2.5, 2.1, 1.1))
 method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
-boxplot(res[, c(2, 4, 6, 9, 8, 7)], names = method.names, las = 2, ylab = "Run Time", main = "Comparison on Run Time in Seconds (n = 300, p = 200)", ylim = c(0, 80))
+boxplot(res[, c(2, 4, 6, 9, 8, 7)], names = method.names, las = 2, ylab = "Run Time", main = "Run Time in Seconds (n = 300, p = 200)", ylim = c(0, 80))
 ```
 
 ## Session information
