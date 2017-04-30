@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -309,8 +309,8 @@ div.tocify {
 </div>
 
 
-<p><strong>Last updated:</strong> 2017-04-07</p>
-<p><strong>Code version:</strong> 1e8f917</p>
+<p><strong>Last updated:</strong> 2017-04-30</p>
+<p><strong>Code version:</strong> 3fcbfe2</p>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
 <p>Using simulated data with correlated design matrix <span class="math inline">\(X\)</span>, we compare <code>SBRr</code> with <a href="https://cran.r-project.org/web/packages/BayesBridge/index.html"><code>BayesBridge</code></a> by <a href="http://onlinelibrary.wiley.com/doi/10.1111/rssb.12042/suppinfo">Polson et al., 2014</a> and <a href="https://cran.r-project.org/web/packages/BoomSpikeSlab/index.html"><code>BoomSpikeSlab</code></a> by Steven L. Scott, on estimating multiple linear regression coefficients and selecting relevant variables in a high-dimensional setting.</p>
@@ -319,7 +319,7 @@ div.tocify {
 <h2><span class="math inline">\(L_0\)</span> regularization is relatively robust to the choice of <span class="math inline">\(\lambda\)</span>.</h2>
 <p>Each row of the design matrix <span class="math inline">\(X_{n\times p}\)</span> is iid <span class="math inline">\(N(0, \Sigma_p)\)</span>, where <span class="math inline">\(\Sigma_p = B_{p\times d}B_{d\times p}^T + I_p\)</span>, <span class="math inline">\(B_{ij} \sim N(0, 1)\)</span>, <span class="math inline">\(d\ll p\)</span>, in order to impose high collinearity among the columns of <span class="math inline">\(X\)</span>. In addition, <span class="math inline">\(X\)</span> is column-wise normalized such tht for each column <span class="math inline">\(X_j\)</span>, <span class="math inline">\(\bar X_j = 0\)</span>, <span class="math inline">\(\|X_j\|_2 = 1\)</span>. The coefficients <span class="math inline">\(\beta\)</span> is generated such that <span class="math inline">\(\eta = 90\%\)</span> of them are zero, and <span class="math inline">\(1 - \eta = 10\%\)</span> of them are equally spaced from zero in both negative and positive directions. Under this setting, the signal-to-noise ratio (SNR, in db) is defined as <span class="math inline">\(10\log_{10}\left(\frac{\|X\beta\|_2^2}{n\sigma_e^2}\right)\)</span>.</p>
 <p>In our setting, <span class="math inline">\(n = 120\)</span>, <span class="math inline">\(p = 100\)</span>, <span class="math inline">\(d = 5\)</span>. <span class="math inline">\(\beta\)</span> is a length <span class="math inline">\(100\)</span> vector, in which <span class="math inline">\(90\)</span> are zero, and <span class="math inline">\(10\)</span> are <span class="math inline">\(\left\{-5, -4, -3, -2, -1, 1, 2, 3, 4, 5\right\}\)</span>. <span class="math inline">\(\text{SNR} = 20\)</span>.</p>
-<p><img src="figure/SBR_comparison.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/SBR_comparison.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/SBR_comparison.Rmd/unnamed-chunk-3-2.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="performance-comparison-snr-20" class="section level2">
 <h2>Performance comparison: SNR = 20</h2>
@@ -344,7 +344,7 @@ div.tocify {
 <div id="session-information" class="section level2">
 <h2>Session Information</h2>
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>R version 3.3.2 (2016-10-31)
+<pre><code>R version 3.3.3 (2017-03-06)
 Platform: x86_64-apple-darwin13.4.0 (64-bit)
 Running under: macOS Sierra 10.12.4
 
@@ -357,13 +357,13 @@ attached base packages:
 other attached packages:
 [1] mvtnorm_1.0-5       BoomSpikeSlab_0.7.0 Boom_0.5           
 [4] MASS_7.3-45         BayesBridge_0.6     glmnet_2.0-5       
-[7] foreach_1.4.3       Matrix_1.2-7.1     
+[7] foreach_1.4.3       Matrix_1.2-8       
 
 loaded via a namespace (and not attached):
- [1] workflowr_0.3.0  Rcpp_0.12.10     codetools_0.2-15 lattice_0.20-34 
- [5] digest_0.6.9     rprojroot_1.2    grid_3.3.2       backports_1.0.5 
- [9] git2r_0.18.0     magrittr_1.5     evaluate_0.10    stringi_1.1.2   
-[13] rmarkdown_1.3    iterators_1.0.8  tools_3.3.2      stringr_1.1.0   
+ [1] workflowr_0.4.0  Rcpp_0.12.10     codetools_0.2-15 lattice_0.20-34 
+ [5] digest_0.6.9     rprojroot_1.2    grid_3.3.3       backports_1.0.5 
+ [9] git2r_0.18.0     magrittr_1.5     evaluate_0.10    stringi_1.1.5   
+[13] rmarkdown_1.4    iterators_1.0.8  tools_3.3.3      stringr_1.2.0   
 [17] yaml_2.1.14      htmltools_0.3.5  knitr_1.15.1    </code></pre>
 </div>
 
