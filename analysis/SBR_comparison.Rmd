@@ -178,7 +178,7 @@ lambda.sb.opt = lambda.sb[which.min(cv_mse$mse_mean)]
 sb = sbr(A = X, z = z, lambda = lambda.sb.opt) # l0 with `SBR` using lambda from CV
 ss.prior = BoomSpikeSlab::SpikeSlabPrior(X, z, expected.model.size = round(p * 0.5))
 ss = BoomSpikeSlab::lm.spike(z ~ X - 1, niter = 1000, prior = ss.prior, ping = 0) #spike-and-slab with `BoomSpikeSlab`
-capture.output(bb <- BayesBridge::bridge.reg(y = z, X, nsamp = 1000), file = "/dev/null") # Bayesian bridge
+capture.output(bb <- BayesBridge::bridge.reg(y = z, X, alpha = -1, nsamp = 1000), file = "/dev/null") # Bayesian bridge
 
 MSE_ls[ii] = mean((coef(ls)- beta)^2)
 MSE_la[ii] = mean((coef(la, s = "lambda.min")[-1] - beta)^2)
@@ -211,12 +211,42 @@ res = read.table("../output/res_0.9_20_5", header = TRUE)
 par(cex.axis = 0.8)
 par(mar = c(6.1, 2.5, 2.1, 1.1))
 method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
-boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Empirical Mean Squared Error", ylim = c(0, 0.4))
+
+c1 <- rainbow(6)
+c2 <- rainbow(6, alpha=0.2)
+c3 <- rainbow(6, v=0.7)
+
+boxplot(res[, 2:7], 
+       names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error", ylim = c(0, 0.4),
+       col = c2, medcol = c3, whiskcol = c1, staplecol = c3, boxcol = c3, outcol = c3
+       )
+
+## boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Comparison on Empirical Mean Squared Error", col = 1:6, ylim = c(0, 0.4))
 
 par(mfrow = c(1, 2))
-boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Number of True Selection")
-abline(h = 10, lty = 2, col = "red")
-boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Number of False Selection")
+c1 <- c1[c(2, 3, 5, 6)]
+c2 <- c2[c(2, 3, 5, 6)]
+c3 <- c3[c(2, 3, 5, 6)]
+
+boxplot(res[, 8:11], 
+names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Selection", las = 2, main = "Comparison on True Selection",
+col = c2, medcol = c3, whiskcol = c1, staplecol = c3, boxcol = c3, outcol = c3)
+
+# boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Comparison on True Positive")
+abline(h = 10, lty = 2)
+boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Selection", las = 2, main = "Comparison on False Selection",
+       col = c2, medcol = c3, whiskcol = c1, staplecol = c3, boxcol = c3, outcol = c3
+       )
+# res = read.table("../output/res_0.9_20_5", header = TRUE)
+# par(cex.axis = 0.8)
+# par(mar = c(6.1, 2.5, 2.1, 1.1))
+# method.names = c("OLS", "LASSO", "Elastic Net", "Bayesian Bridge", "Spike & Slab", "SBR")
+# boxplot(res[, 2:7], names = method.names, las = 2, ylab = "Empirical MSE", main = "Empirical Mean Squared Error", ylim = c(0, 0.4))
+# 
+# par(mfrow = c(1, 2))
+# boxplot(res[, 8:11], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of True Positive", las = 2, main = "Number of True Selection")
+# abline(h = 10, lty = 2, col = "red")
+# boxplot(res[, 12:15], names = c("LASSO", "Elastic Net", "Spike & Slab", "SBR"), ylab = "Number of False Positive", las = 2, main = "Number of False Selection")
 ```
 
 ## Performance comparison: SNR = 15

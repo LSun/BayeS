@@ -309,8 +309,8 @@ div.tocify {
 </div>
 
 
-<p><strong>Last updated:</strong> 2017-04-30</p>
-<p><strong>Code version:</strong> 3fcbfe2</p>
+<p><strong>Last updated:</strong> 2017-05-31</p>
+<p><strong>Code version:</strong> 64cd961</p>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
 <p>Using simulated data with correlated design matrix <span class="math inline">\(X\)</span>, we compare <code>SBRr</code> with <a href="https://cran.r-project.org/web/packages/BayesBridge/index.html"><code>BayesBridge</code></a> by <a href="http://onlinelibrary.wiley.com/doi/10.1111/rssb.12042/suppinfo">Polson et al., 2014</a> and <a href="https://cran.r-project.org/web/packages/BoomSpikeSlab/index.html"><code>BoomSpikeSlab</code></a> by Steven L. Scott, on estimating multiple linear regression coefficients and selecting relevant variables in a high-dimensional setting.</p>
@@ -346,7 +346,7 @@ div.tocify {
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 3.3.3 (2017-03-06)
 Platform: x86_64-apple-darwin13.4.0 (64-bit)
-Running under: macOS Sierra 10.12.4
+Running under: macOS Sierra 10.12.5
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -355,16 +355,16 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] mvtnorm_1.0-5       BoomSpikeSlab_0.7.0 Boom_0.5           
-[4] MASS_7.3-45         BayesBridge_0.6     glmnet_2.0-5       
-[7] foreach_1.4.3       Matrix_1.2-8       
+[1] mvtnorm_1.0-6       BoomSpikeSlab_0.8.0 Boom_0.6           
+[4] MASS_7.3-47         BayesBridge_0.6     glmnet_2.0-10      
+[7] foreach_1.4.3       Matrix_1.2-10      
 
 loaded via a namespace (and not attached):
- [1] workflowr_0.4.0  Rcpp_0.12.10     codetools_0.2-15 lattice_0.20-34 
- [5] digest_0.6.9     rprojroot_1.2    grid_3.3.3       backports_1.0.5 
+ [1] workflowr_0.4.0  Rcpp_0.12.10     codetools_0.2-15 lattice_0.20-35 
+ [5] digest_0.6.12    rprojroot_1.2    grid_3.3.3       backports_1.0.5 
  [9] git2r_0.18.0     magrittr_1.5     evaluate_0.10    stringi_1.1.5   
-[13] rmarkdown_1.4    iterators_1.0.8  tools_3.3.3      stringr_1.2.0   
-[17] yaml_2.1.14      htmltools_0.3.5  knitr_1.15.1    </code></pre>
+[13] rmarkdown_1.5    iterators_1.0.8  tools_3.3.3      stringr_1.2.0   
+[17] yaml_2.1.14      htmltools_0.3.6  knitr_1.16      </code></pre>
 </div>
 
 <hr>
@@ -416,7 +416,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>
