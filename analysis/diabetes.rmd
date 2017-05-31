@@ -1,0 +1,149 @@
+---
+title: "SBR vs Lasso on the Diabetes Date Set"
+author: "Lei Sun"
+date: 2017-05-23
+output: html_document
+---
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+<!-- Add your analysis here -->
+
+## Introduction
+
+Comparison of Lasso and elastic net (both `glmnet`), Bayesian bridge (`BayesBridge`), spike-and-slab priors (`BoomSpikeSlab`), and SBR on the [diabetes data set](https://www.rdocumentation.org/packages/lars/versions/1.2/topics/diabetes).
+
+```{r, message = FALSE}
+library(lars)
+library(glmnet)
+library(BoomSpikeSlab)
+library(BayesBridge)
+```
+
+```{r, message = FALSE}
+source("../code/SBRr.R")
+```
+
+```{r, include = FALSE}
+sparrep = function(x) {
+  position = which(abs(x) > 0)
+  value = x[position]
+  return(cbind(position, value))
+}
+
+varseleval = function(x, y = tp_beta) {
+  tp = intersect(x, y)
+  fp = setdiff(x, y)
+  tpn = length(tp)
+  fpn = length(fp)
+  return(list(tp = tp, fp = fp, tpn = tpn, fpn = fpn))
+}
+
+vec.norm = function (x) {
+  if(all(x == 0)) {stop} else {x.norm = (x - mean(x)) / sqrt(sum((x - mean(x))^2)); return(x.norm)}
+}
+
+cv.sbr = function (A, z, lambda, nfold = 10) {
+  n = nrow(A)
+  p = ncol(A)
+  fold = split(sample(n, n), 1:nfold)
+  mse_cv = mse_mean = mse_sd = c()
+  for (j in 1:length(lambda)) {
+    for (i in 1:nfold) {
+      betahat.sbr = sbr(A = A[-fold[[i]], ], z = z[-fold[[i]]], lambda[j])
+      betahat = betahat.sbr$x
+      # mse_cv[i] = mean((A[fold[[i]], ]%*%betahat - z[fold[[i]]])^2)
+      betahat_active = betahat.sbr$x.sparse[, 1]
+      betahat_active_est = coef(lm(z[-fold[[i]]] ~ A[-fold[[i]], betahat_active] - 1))
+      mse_cv[i] = mean((A[fold[[i]], betahat_active] %*% betahat_active_est - z[fold[[i]]])^2)
+    }
+    mse_mean[j] = mean(mse_cv)
+    mse_sd[j] = sd(mse_cv)
+  }
+  return(list(lambda = lambda, mse_mean = mse_mean, mse_sd = mse_sd))
+}
+
+sparserep = function (beta) {
+  position = which(abs(beta) > 0)
+  value = beta[position]
+  return(cbind(position, value))
+}
+```
+
+
+```{r}
+data("diabetes")
+X = diabetes$x
+y = diabetes$y
+y = y - mean(y)
+X2 = diabetes$x2
+```
+
+```{r fitting, cache = TRUE, include = FALSE}
+fit.lasso.cv <- glmnet::cv.glmnet(x = X2, y = y, intercept = FALSE, alpha = 1)
+fit.lasso <- glmnet::glmnet(x = X2, y = y, intercept = FALSE, alpha = 1, lambda = fit.lasso.cv$lambda.min)
+sel.lasso <- colnames(X2)[which(fit.lasso$beta != 0)]
+beta.sel.lasso <- fit.lasso$beta[which(fit.lasso$beta != 0)]
+fit.enet.cv = glmnet::cv.glmnet(x = X2, y = y, intercept = FALSE, alpha = 0.5) # elastic net
+fit.enet <- glmnet::glmnet(x = X2, y = y, intercept = FALSE, alpha = 0.5, lambda = fit.enet.cv$lambda.min)
+sel.enet <- colnames(X2)[which(fit.enet$beta != 0)]
+beta.sel.enet <- fit.enet$beta[which(fit.enet$beta != 0)]
+lambda.sb = exp(seq(log(1500), log(15000), length = 1000))
+cv_mse = cv.sbr(A = X2, z = y, lambda = lambda.sb)
+fit.sbr <- sbr(A = X2, z = y, lambda = 5000)
+sel.sbr <- colnames(X2)[fit.sbr$x.sparse[, 1]]
+beta.sel.sbr <- fit.sbr$x.sparse[, 2]
+sns.prior = BoomSpikeSlab::SpikeSlabPrior(X2, y, expected.model.size = round(ncol(X2) * 0.5))
+fit.sns = BoomSpikeSlab::lm.spike(y ~ X2 - 1, niter = 1000, prior = sns.prior, ping = 0) #spike-and-slab with `BoomSpikeSlab`
+sel.sns.index = summary(fit.sns, burn = 500, order = FALSE)$coef[, 5] > 0.5
+sel.sns = colnames(X2)[sel.sns.index]
+beta.sel.sns = summary(fit.sns, burn = 500, order = FALSE)$coef[sel.sns.index, 1]
+fit.bridge <- BayesBridge::bridge.reg(y = y, X2, nsamp = 1000, alpha = 0.01)
+beta.sel.bridge = colMeans(fit.bridge$beta)[which(fit.enet$beta != 0)]
+```
+
+## Results
+
+### Variable selection
+
+```{r}
+### LASSO
+sel.lasso
+### Elastic Net
+sel.enet
+### Spike & Slab
+sel.sns
+### SBR
+sel.sbr
+```
+
+### Variable Estimation
+
+*Estimated by `BayesBridge`*
+
+```{r}
+beta.sel.bridge
+```
+
+## Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```

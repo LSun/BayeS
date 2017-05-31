@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -215,7 +215,9 @@ $(document).ready(function () {
 <p>The problem is whether we can find a <span class="math inline">\(\phi\)</span>, such that <span class="math inline">\(\hat\mu_B\)</span>, the optimal Bayesian estimator to a certain loss, is a solution to the regularized least squares with <span class="math inline">\(\phi\)</span> as the penalty. This framework of matching Tweedie’s formula to a proximal operator can potentially be generalized to the exponential family likelihood, not just normal means. The specific formula should be changed accordingly.</p>
 <ul>
 <li><a href="SBR_comparison.html">Single best replacement (SBR) for <span class="math inline">\(l_0\)</span>-regularized linear regression: Accuracy</a></li>
-<li><a href="SBR_comparison_2.html">Single best replacement (SBR) for <span class="math inline">\(l_0\)</span>-regularized linear regression: Time</a></li>
+<li><a href="SBR_comparison_2.html">Single best replacement (SBR) for <span class="math inline">\(l_0\)</span>-regularized linear regression: Time 1</a></li>
+<li><a href="SBR_comparison_3.html">Single best replacement (SBR) for <span class="math inline">\(l_0\)</span>-regularized linear regression: Time 2</a></li>
+<li><a href="diabetes.html">Single best replacement (SBR) for <span class="math inline">\(l_0\)</span>-regularized linear regression: Diabetes data set</a></li>
 </ul>
 <p><span class="math inline">\(l_0\)</span>-regularized linear regression is NP-hard, yet under high SNR and high collinearity, the <a href="http://ieeexplore.ieee.org/document/5930380/">single best replacement (SBR)</a> algorithm, developed in the signal processing community, is compared favorably to <span class="math inline">\(l_1\)</span> methods like lasso, elastic net, <span class="math inline">\(l_q, q\in(0, 1)\)</span> method like BayesBridge, and the gold standard spike-and-slab MCMC.</p>
 
@@ -266,7 +268,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

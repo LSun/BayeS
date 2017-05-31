@@ -1,0 +1,65 @@
+---
+title: "A better boxplot for time cost"
+author: "Lei Sun"
+date: 2017-04-30
+output: html_document
+---
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+<!-- Add your analysis here -->
+
+## Introduction
+
+A better boxplot to show the time cost by differen methods in different problem sizes.
+
+```{r, echo = FALSE, cache = TRUE}
+res100 = read.table("../output/res_0.9_20_5_100_120", header = TRUE)
+res200 = read.table("../output/res_0.9_20_5_200_300", header = TRUE)
+time <- c(res100[, 2], res200[, 2], res100[, 4], res200[, 4], res100[, 6], res200[, 6], 
+          res100[, 9], res200[, 9], res100[, 8], res200[, 8], res100[, 7], res200[, 7])
+method <- factor(c(
+  rep("OLS", 400), rep("LASSO", 400), rep("Elastic Net", 400), rep("Bayesian Bridge", 400), rep("Spike & Slab", 400), rep("SBR", 400)))
+method = factor(method, levels(method)[c(4, 3, 2, 1, 6, 5)])
+size <- factor(rep(c(rep("n = 120, p = 100", 200), rep("n = 300, p = 200", 200)), 6))
+data = data.frame(method, size, time)
+size.col = c("blue", "red")
+par(cex.axis = 0.8)
+par(mar = c(6.1, 4.5, 2.1, 1.1))
+boxplot(time ~ size * method, data = data, boxwex = 0.4, ylab = "Run Time in Seconds", ylim = c(0, 80), main = "Time Cost", col = size.col, outcol = size.col,
+        xaxt = "n")
+axis(1, at = seq(1.5, 11.5, 2), labels = levels(method), las = 2, tick = FALSE, line = - 0.5)
+legend("topleft", legend = levels(size), col = size.col, pch = 15, bty = "n", pt.cex = 2, cex = 1)
+```
+
+```{r echo = FALSE, cache = TRUE}
+par(cex.axis = 0.8)
+par(mar = c(6.1, 4.5, 2.1, 1.1))
+boxplot(log(time) ~ size * method, data = data, boxwex = 0.4, ylab = "Run Time in Log(Seconds)", main = "Time Cost", col = size.col, outcol = size.col,
+        xaxt = "n")
+axis(1, at = seq(1.5, 11.5, 2), labels = levels(method), las = 2, tick = FALSE, line = - 0.5)
+legend("topleft", legend = levels(size), col = size.col, pch = 15, bty = "n", pt.cex = 2, cex = 1)
+```
+
+## Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```
